@@ -1,0 +1,2495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#121216">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Blank space">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<title>Blank space</title>
+<style>
+  html, body { margin: 0; height: 100%; height: 100dvh; background: #121216; overflow: hidden; color-scheme: dark; }
+  html:fullscreen, html:-webkit-full-screen {
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    background: #121216;
+  }
+  html:fullscreen #view, html:-webkit-full-screen #view {
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+  }
+  #view {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    outline: none;
+    touch-action: none;
+  }
+  :root {
+    --edge: 12px;
+    --chip: #1c1c22;
+    --ink: #e4e4ea;
+    --line: #3a3a44;
+    --full-slot: 172px;
+    --lift-slot: 60px;
+  }
+  #hud {
+    position: fixed;
+    z-index: 4;
+    top: max(var(--edge), env(safe-area-inset-top));
+    left: max(var(--edge), env(safe-area-inset-left));
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 8px;
+    max-width: calc(100% - max(var(--edge), env(safe-area-inset-left)) - max(var(--edge), env(safe-area-inset-right)) - var(--full-slot));
+    pointer-events: none;
+  }
+  #hud > * { pointer-events: auto; }
+  #god,
+  #mute,
+  #full {
+    box-sizing: border-box;
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 0;
+    padding: 0 14px;
+    background: var(--chip);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+    font: 14px/1 ui-sans-serif, system-ui, sans-serif;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  #mute,
+  #full {
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  #full {
+    position: fixed;
+    z-index: 4;
+    top: max(var(--edge), env(safe-area-inset-top));
+    right: max(var(--edge), env(safe-area-inset-right));
+  }
+  #god input {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    flex: 0 0 auto;
+    accent-color: var(--ink);
+  }
+  #mute[aria-pressed="true"] { color: #c8c8d2; }
+  #full:focus-visible,
+  #mute:focus-visible,
+  #god:focus-within {
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
+  }
+  html:fullscreen #full,
+  html:-webkit-full-screen #full { background: #2a2a34; }
+  #hint {
+    position: fixed;
+    z-index: 3;
+    left: max(var(--edge), env(safe-area-inset-left));
+    bottom: max(var(--edge), env(safe-area-inset-bottom));
+    max-width: calc(100% - max(var(--edge), env(safe-area-inset-left)) - max(var(--edge), env(safe-area-inset-right)) - var(--lift-slot));
+    box-sizing: border-box;
+    margin: 0;
+    padding: 8px 12px;
+    text-align: left;
+    color: var(--ink);
+    background: var(--chip);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+    font: 13px/1.35 ui-sans-serif, system-ui, sans-serif;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+  }
+  #hint.gone { opacity: 0; }
+  #readout {
+    position: fixed;
+    z-index: 3;
+    top: calc(max(var(--edge), env(safe-area-inset-top)) + 56px);
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    max-width: calc(100% - max(var(--edge), env(safe-area-inset-left)) - max(var(--edge), env(safe-area-inset-right)) - 24px);
+    pointer-events: none;
+  }
+  #nav,
+  #note {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 0;
+    padding: 6px 12px;
+    background: var(--chip);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+    font: 13px/1.2 ui-sans-serif, system-ui, sans-serif;
+    white-space: nowrap;
+  }
+  #note {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    overflow: hidden;
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+    transition: opacity 0.25s ease;
+  }
+  #note.show {
+    opacity: 1;
+    max-height: 36px;
+    padding: 6px 12px;
+    border-color: var(--line);
+    background: var(--chip);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  }
+  #compass {
+    width: 14px;
+    height: 14px;
+    border: 1.5px solid var(--line);
+    border-radius: 50%;
+    position: relative;
+    flex: 0 0 auto;
+  }
+  #compass::before {
+    content: "";
+    position: absolute;
+    left: 6px;
+    top: 1px;
+    width: 2px;
+    height: 6px;
+    border-radius: 1px;
+    background: var(--ink);
+  }
+  @media (max-width: 520px) {
+    #readout { top: calc(max(var(--edge), env(safe-area-inset-top)) + 108px); }
+  }
+  @media (max-width: 720px), (max-height: 720px) {
+    #hint { font-size: 12px; line-height: 1.3; padding: 6px 10px; }
+    #god, #mute, #full, #nav, #note { padding: 0 12px; font-size: 13px; }
+    #nav, #note, #note.show { padding: 6px 12px; }
+  }
+  #dot {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    width: 6px;
+    height: 6px;
+    margin: -3px 0 0 -3px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.9), 0 0 0 2px rgba(228, 228, 234, 0.55);
+    pointer-events: none;
+    z-index: 2;
+  }
+  #stick {
+    position: fixed;
+    width: 96px;
+    height: 96px;
+    margin: -48px 0 0 -48px;
+    border: 1px solid rgba(228, 228, 234, 0.45);
+    border-radius: 50%;
+    background: rgba(28, 28, 34, 0.35);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+    pointer-events: none;
+    z-index: 3;
+    display: none;
+  }
+  #stick i {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 36px;
+    height: 36px;
+    margin: -18px 0 0 -18px;
+    border-radius: 50%;
+    background: rgba(228, 228, 234, 0.55);
+  }
+  #lift {
+    position: fixed;
+    z-index: 4;
+    right: max(var(--edge), env(safe-area-inset-right));
+    bottom: max(var(--edge), env(safe-area-inset-bottom));
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  #lift button {
+    position: relative;
+    box-sizing: border-box;
+    width: 44px;
+    height: 44px;
+    border-radius: 22px;
+    border: 1px solid var(--line);
+    background: var(--chip);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+    padding: 0;
+    touch-action: none;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+  }
+  #lift button:focus,
+  #lift button:focus-visible,
+  #lift button:active {
+    outline: none;
+  }
+  #lift button.held,
+  #lift button:active { background: #2a2a34; }
+  @media (hover: hover) {
+    #god:hover, #mute:hover, #full:hover, #lift button:hover { background: #26262e; }
+    #lift button.held:hover { background: #2a2a34; }
+  }
+  #lift button::before {
+    content: "";
+    position: absolute;
+    left: 16px;
+    width: 10px;
+    height: 10px;
+    border-left: 2px solid var(--ink);
+    border-bottom: 2px solid var(--ink);
+    pointer-events: none;
+  }
+  #up::before { top: 14px; transform: rotate(135deg); }
+  #down::before { top: 18px; transform: rotate(-45deg); }
+  #result {
+    position: fixed;
+    z-index: 1;
+    top: calc(max(var(--edge), env(safe-area-inset-top)) + 100px);
+    left: max(var(--edge), env(safe-area-inset-left));
+    max-width: calc(100% - max(var(--edge), env(safe-area-inset-left)) - max(var(--edge), env(safe-area-inset-right)));
+    color: #ddd;
+    font: 12px/1.45 ui-monospace, monospace;
+    white-space: pre-wrap;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+<div id="hud">
+  <label id="god"><input id="godbox" type="checkbox" checked> God mode</label>
+  <button id="mute" type="button" aria-pressed="false">Mute</button>
+</div>
+<button id="full" type="button">Full screen</button>
+<canvas id="view" tabindex="0"></canvas>
+<div id="dot" aria-hidden="true"></div>
+<div id="stick"><i></i></div>
+<div id="lift">
+  <button type="button" id="up" aria-label="Up" tabindex="-1" draggable="false"></button>
+  <button type="button" id="down" aria-label="Down" tabindex="-1" draggable="false"></button>
+</div>
+<div id="readout">
+  <div id="nav">
+    <span id="compass" aria-hidden="true"></span>
+    <span id="where">N · Flying</span>
+  </div>
+  <div id="note" role="status"></div>
+</div>
+<div id="hint">Right mouse looks · WASD · You move the skeleton</div>
+<div id="result"></div>
+<script>
+(function () {
+  var canvas = document.getElementById("view");
+  var hint = document.getElementById("hint");
+  var fullBtn = document.getElementById("full");
+  var result = document.getElementById("result");
+  var gl = null;
+
+  function grabGL() {
+    var sets = [
+      { antialias: true, alpha: false, depth: true },
+      { antialias: false, alpha: false, depth: true },
+      { antialias: false, alpha: true, depth: true }
+    ];
+    var i, ctx;
+    for (i = 0; i < sets.length; i++) {
+      ctx = canvas.getContext("webgl", sets[i]) || canvas.getContext("experimental-webgl", sets[i]);
+      if (ctx) return ctx;
+    }
+    return null;
+  }
+
+  function waitGL(left) {
+    gl = grabGL();
+    if (gl) {
+      startGame();
+      return;
+    }
+    if (left <= 0) {
+      result.textContent = "This chat view cannot draw the space.";
+      return;
+    }
+    requestAnimationFrame(function () { waitGL(left - 1); });
+  }
+  waitGL(90);
+
+  function startGame() {
+  var SPEED = 9;
+  var FAST = 27;
+  var TURN = 4.2;
+  var LOOK = 0.006;
+  var R = 16;
+  var EYE = 1.7;
+  var GRAV = 22;
+  var JUMP = 8;
+  var yaw = 0;
+  var pitch = 0;
+  var px = 0, py = R + EYE, pz = 0;
+  var sound = {
+    ctx: null,
+    master: null,
+    noise: null,
+    flyG: null,
+    flyF: null,
+    unlocked: false,
+    muted: false,
+    dead: false,
+    stepAcc: 0,
+    stepArmed: false,
+    stepN: 0,
+    stepGains: [],
+    prevX: px,
+    prevY: py,
+    prevZ: pz
+  };
+  var fx = 0, fy = 0, fz = -1;
+  var god = true;
+  var vr = 0;
+  var keys = Object.create(null);
+  var pointers = Object.create(null);
+  var stickF = 0;
+  var stickS = 0;
+  var holdUp = false;
+  var holdDown = false;
+  var stick = document.getElementById("stick");
+  var nub = stick.firstChild;
+
+  function basis(y) {
+    return {
+      fx: -Math.sin(y),
+      fz: -Math.cos(y),
+      rx: Math.cos(y),
+      rz: -Math.sin(y)
+    };
+  }
+
+  function step(inp, dt, sprint) {
+    var b = basis(yaw);
+    var speed = sprint ? FAST : SPEED;
+    px += (b.fx * inp.f + b.rx * inp.s) * speed * dt;
+    pz += (b.fz * inp.f + b.rz * inp.s) * speed * dt;
+    py += inp.u * speed * dt;
+  }
+
+  function plantForward() {
+    var dist = Math.hypot(px, py, pz);
+    if (dist < 1e-4) {
+      px = 0; py = R + EYE; pz = 0;
+      dist = R + EYE;
+    }
+    var nx = px / dist, ny = py / dist, nz = pz / dist;
+    var d = fx * nx + fy * ny + fz * nz;
+    fx -= nx * d; fy -= ny * d; fz -= nz * d;
+    var fl = Math.hypot(fx, fy, fz);
+    if (fl < 1e-5) {
+      fx = 0; fy = 0; fz = -1;
+      d = fx * nx + fy * ny + fz * nz;
+      fx -= nx * d; fy -= ny * d; fz -= nz * d;
+      fl = Math.hypot(fx, fy, fz);
+      if (fl < 1e-5) {
+        fx = -1; fy = 0; fz = 0;
+        d = fx * nx + fy * ny + fz * nz;
+        fx -= nx * d; fy -= ny * d; fz -= nz * d;
+        fl = Math.hypot(fx, fy, fz);
+      }
+    }
+    fx /= fl; fy /= fl; fz /= fl;
+    return {
+      nx: nx, ny: ny, nz: nz, dist: dist,
+      rx: fy * nz - fz * ny,
+      ry: fz * nx - fx * nz,
+      rz: fx * ny - fy * nx
+    };
+  }
+
+  function turnBy(angle) {
+    if (!angle) return;
+    var b = plantForward();
+    var c = Math.cos(angle), s = Math.sin(angle);
+    fx = fx * c - b.rx * s;
+    fy = fy * c - b.ry * s;
+    fz = fz * c - b.rz * s;
+  }
+
+  function adoptWorldYaw() {
+    yaw = Math.atan2(-fx, -fz);
+  }
+
+  function adoptSurfaceForward() {
+    fx = -Math.sin(yaw);
+    fy = 0;
+    fz = -Math.cos(yaw);
+    plantForward();
+  }
+
+  function walkMove(inp, dt, sprint, jump) {
+    var b = plantForward();
+    var ground = R + EYE;
+    var wasGrounded = b.dist <= ground + 0.05;
+    var speed = sprint ? FAST : SPEED;
+    px += (fx * inp.f + b.rx * inp.s) * speed * dt;
+    py += (fy * inp.f + b.ry * inp.s) * speed * dt;
+    pz += (fz * inp.f + b.rz * inp.s) * speed * dt;
+    var dist = Math.hypot(px, py, pz);
+    if (dist < 1e-4) dist = ground;
+    var nx = px / dist, ny = py / dist, nz = pz / dist;
+    if (jump && wasGrounded) {
+      vr = JUMP;
+      playJump();
+    }
+    if (wasGrounded && vr <= 0 && !jump) {
+      dist = ground;
+      vr = 0;
+    } else {
+      dist += vr * dt;
+      vr -= GRAV * dt;
+      if (dist < ground) {
+        dist = ground;
+        if (vr < 0) vr = 0;
+      }
+    }
+    px = nx * dist; py = ny * dist; pz = nz * dist;
+    plantForward();
+  }
+
+  function lookBy(dx, dy) {
+    if (god) yaw -= dx * LOOK;
+    else turnBy(-dx * LOOK);
+    pitch -= dy * LOOK;
+    var limit = Math.PI / 2 - 0.02;
+    if (pitch > limit) pitch = limit;
+    if (pitch < -limit) pitch = -limit;
+  }
+
+  if (location.hash === "#selftest") {
+    var lines = [];
+    function check(label, setYaw, inp, ex, ey, ez) {
+      yaw = setYaw;
+      pitch = 0;
+      px = 0; py = 1.7; pz = 0;
+      step(inp, 1, false);
+      var dx = px, dy = py - 1.7, dz = pz;
+      var len = Math.hypot(dx, dy, dz);
+      var along = len < 1e-6 ? 0 : (dx * ex + dy * ey + dz * ez) / (len * Math.hypot(ex, ey, ez));
+      var ok = len > 0.5 && along > 0.9;
+      lines.push((ok ? "ok " : "FAIL ") + label + " cos=" + along.toFixed(3));
+      return ok;
+    }
+    var pass = true;
+    pass = check("W looks -z", 0, { f: 1, s: 0, u: 0 }, 0, 0, -1) && pass;
+    pass = check("D moves +x", 0, { f: 0, s: 1, u: 0 }, 1, 0, 0) && pass;
+    pass = check("A moves -x", 0, { f: 0, s: -1, u: 0 }, -1, 0, 0) && pass;
+    pass = check("S moves +z", 0, { f: -1, s: 0, u: 0 }, 0, 0, 1) && pass;
+    pass = check("W after yaw +90 faces -x", Math.PI / 2, { f: 1, s: 0, u: 0 }, -1, 0, 0) && pass;
+    pass = check("D after yaw +90 moves -z", Math.PI / 2, { f: 0, s: 1, u: 0 }, 0, 0, -1) && pass;
+    pass = check("Space moves +y", 0, { f: 0, s: 0, u: 1 }, 0, 1, 0) && pass;
+    pass = check("C moves -y", 0, { f: 0, s: 0, u: -1 }, 0, -1, 0) && pass;
+    yaw = 0; pitch = 0; px = 0; py = 1.7; pz = 8;
+    result.textContent = (pass ? "PASS" : "FAIL") + "\n" + lines.join("\n");
+  }
+
+  var program, locPos, locMVP, locColor, buf, bodyBuf;
+  var tprog, tLocA, tLocB, tLocSide, tLocMVP, tLocColor, tLocRes, tLocWidth, tbuf;
+  var glLost = false;
+  function compile(type, src) {
+    var shader = gl.createShader(type);
+    gl.shaderSource(shader, src);
+    gl.compileShader(shader);
+    return shader;
+  }
+  function mountGL() {
+    program = gl.createProgram();
+    gl.attachShader(program, compile(gl.VERTEX_SHADER,
+      "attribute vec3 aPos; uniform mat4 uMVP; uniform float uFogK; varying float vFog;" +
+      "void main(){ vec4 p = uMVP * vec4(aPos, 1.0); gl_Position = p; vFog = clamp((p.w - 12.0) * uFogK, 0.0, 1.0); }"));
+    gl.attachShader(program, compile(gl.FRAGMENT_SHADER,
+      "precision mediump float; varying float vFog; uniform vec3 uColor;" +
+      "void main(){ gl_FragColor = vec4(mix(uColor, vec3(0.071,0.071,0.086), vFog), 1.0); }"));
+    gl.linkProgram(program);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      result.textContent = "This chat view cannot draw the space.";
+      return false;
+    }
+    gl.useProgram(program);
+    locPos = gl.getAttribLocation(program, "aPos");
+    locMVP = gl.getUniformLocation(program, "uMVP");
+    locColor = gl.getUniformLocation(program, "uColor");
+    locFogK = gl.getUniformLocation(program, "uFogK");
+    buf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verts), gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(locPos);
+    gl.vertexAttribPointer(locPos, 3, gl.FLOAT, false, 0, 0);
+    gl.enable(gl.DEPTH_TEST);
+    gl.clearColor(0.071, 0.071, 0.086, 1);
+    bodyBuf = gl.createBuffer();
+    tprog = gl.createProgram();
+    gl.attachShader(tprog, compile(gl.VERTEX_SHADER,
+      "attribute vec3 aA; attribute vec3 aB; attribute vec2 aSide;" +
+      "uniform mat4 uMVP; uniform vec2 uRes; uniform float uWidth; varying float vFog;" +
+      "void main(){" +
+      "  vec4 pa = uMVP * vec4(aA, 1.0); vec4 pb = uMVP * vec4(aB, 1.0);" +
+      "  vec2 p0 = pa.xy / pa.w; vec2 p1 = pb.xy / pb.w;" +
+      "  vec2 dpx = (p1 - p0) * uRes * 0.5;" +
+      "  vec2 n = normalize(vec2(-dpx.y, dpx.x) + vec2(0.0001, 0.0002));" +
+      "  vec2 off = n * (aSide.x * uWidth * 0.5) / (uRes * 0.5);" +
+      "  vec4 p = mix(pa, pb, aSide.y);" +
+      "  gl_Position = vec4((p.xy / p.w + off) * p.w, p.z, p.w);" +
+      "  vFog = clamp((p.w - 12.0) / 58.0, 0.0, 1.0); }"));
+    gl.attachShader(tprog, compile(gl.FRAGMENT_SHADER,
+      "precision mediump float; varying float vFog; uniform vec3 uColor;" +
+      "void main(){ gl_FragColor = vec4(mix(uColor, vec3(0.071,0.071,0.086), vFog), 1.0); }"));
+    gl.linkProgram(tprog);
+    if (gl.getProgramParameter(tprog, gl.LINK_STATUS)) {
+      tLocA = gl.getAttribLocation(tprog, "aA");
+      tLocB = gl.getAttribLocation(tprog, "aB");
+      tLocSide = gl.getAttribLocation(tprog, "aSide");
+      tLocMVP = gl.getUniformLocation(tprog, "uMVP");
+      tLocColor = gl.getUniformLocation(tprog, "uColor");
+      tLocRes = gl.getUniformLocation(tprog, "uRes");
+      tLocWidth = gl.getUniformLocation(tprog, "uWidth");
+      tbuf = gl.createBuffer();
+    }
+    return true;
+  }
+
+  var verts = [];
+  var meridians = 24;
+  var parallels = 12;
+  var steps = 48;
+  var m, s, p, a, t0, t1, ca, sa;
+  for (m = 0; m < meridians; m++) {
+    a = m / meridians * Math.PI * 2;
+    ca = Math.cos(a); sa = Math.sin(a);
+    for (s = 0; s < steps; s++) {
+      t0 = s / steps * Math.PI;
+      t1 = (s + 1) / steps * Math.PI;
+      verts.push(
+        Math.sin(t0) * ca * R, Math.cos(t0) * R, Math.sin(t0) * sa * R,
+        Math.sin(t1) * ca * R, Math.cos(t1) * R, Math.sin(t1) * sa * R
+      );
+    }
+  }
+  for (p = 1; p < parallels; p++) {
+    t0 = p / parallels * Math.PI;
+    var yy = Math.cos(t0) * R;
+    var rad = Math.sin(t0) * R;
+    for (s = 0; s < steps; s++) {
+      var a0 = s / steps * Math.PI * 2;
+      var a1 = (s + 1) / steps * Math.PI * 2;
+      verts.push(
+        Math.cos(a0) * rad, yy, Math.sin(a0) * rad,
+        Math.cos(a1) * rad, yy, Math.sin(a1) * rad
+      );
+    }
+  }
+  var markStart = verts.length / 3;
+  // Landmarks and stars: seeded so the world is the same every load.
+  var seed = 20261114;
+  function rnd() {
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+    return seed / 0x7fffffff;
+  }
+  function crossInto(ax, ay, az, bx, by, bz) {
+    return [ay * bz - az * by, az * bx - ax * bz, ax * by - ay * bx];
+  }
+  var li, u, v, nx, ny, nz, t1, t2, sz, ss;
+  for (li = 0; li < 170; li++) {
+    u = rnd() * 2 - 1; v = rnd() * Math.PI * 2;
+    var rq = Math.sqrt(1 - u * u);
+    nx = rq * Math.cos(v); ny = u; nz = rq * Math.sin(v);
+    t1 = crossInto(nx, ny, nz, 0, 1, 0);
+    var tl = Math.hypot(t1[0], t1[1], t1[2]);
+    if (tl < 0.001) t1 = crossInto(nx, ny, nz, 1, 0, 0);
+    tl = Math.hypot(t1[0], t1[1], t1[2]);
+    t1 = [t1[0] / tl, t1[1] / tl, t1[2] / tl];
+    t2 = crossInto(nx, ny, nz, t1[0], t1[1], t1[2]);
+    var t2l = Math.hypot(t2[0], t2[1], t2[2]);
+    t2 = [t2[0] / t2l, t2[1] / t2l, t2[2] / t2l];
+    sz = 0.05 + rnd() * 0.11;
+    var h = R + 0.012 + rnd() * 0.02;
+    var cx = nx * h, cy = ny * h, cz = nz * h;
+    verts.push(
+      cx - t1[0] * sz, cy - t1[1] * sz, cz - t1[2] * sz, cx + t1[0] * sz, cy + t1[1] * sz, cz + t1[2] * sz,
+      cx - t2[0] * sz, cy - t2[1] * sz, cz - t2[2] * sz, cx + t2[0] * sz, cy + t2[1] * sz, cz + t2[2] * sz
+    );
+    if (rnd() < 0.5) {
+      var d = sz * 0.7;
+      verts.push(
+        cx - t1[0] * d - t2[0] * d, cy - t1[1] * d - t2[1] * d, cz - t1[2] * d - t2[2] * d,
+        cx + t1[0] * d + t2[0] * d, cy + t1[1] * d + t2[1] * d, cz + t1[2] * d + t2[2] * d
+      );
+    }
+  }
+  var starStart = verts.length / 3;
+  for (li = 0; li < 210; li++) {
+    u = rnd() * 2 - 1; v = rnd() * Math.PI * 2;
+    var sr = 90, rq2 = Math.sqrt(1 - u * u);
+    nx = sr * rq2 * Math.cos(v); ny = sr * u; nz = sr * rq2 * Math.sin(v);
+    t1 = crossInto(nx, ny, nz, 0, 1, 0);
+    var sl = Math.hypot(t1[0], t1[1], t1[2]);
+    if (sl < 0.001) t1 = crossInto(nx, ny, nz, 1, 0, 0);
+    sl = Math.hypot(t1[0], t1[1], t1[2]);
+    t1 = [t1[0] / sl, t1[1] / sl, t1[2] / sl];
+    t2 = crossInto(nx, ny, nz, t1[0], t1[1], t1[2]);
+    var t2l = Math.hypot(t2[0], t2[1], t2[2]);
+    t2 = [t2[0] / t2l, t2[1] / t2l, t2[2] / t2l];
+    ss = 0.9 + rnd() * 1.5;
+    verts.push(
+      nx - t1[0] * ss, ny - t1[1] * ss, nz - t1[2] * ss, nx + t1[0] * ss, ny + t1[1] * ss, nz + t1[2] * ss,
+      nx - t2[0] * ss, ny - t2[1] * ss, nz - t2[2] * ss, nx + t2[0] * ss, ny + t2[1] * ss, nz + t2[2] * ss
+    );
+  }
+  canvas.addEventListener("webglcontextlost", function (e) {
+    e.preventDefault();
+    glLost = true;
+  }, false);
+  canvas.addEventListener("webglcontextrestored", function () {
+    glLost = false;
+    if (mountGL()) fit();
+  }, false);
+  if (!mountGL()) return;
+
+  var locFogK = null;
+  var mvp = new Float32Array(16);
+  var view = new Float32Array(16);
+  var proj = new Float32Array(16);
+  var camx = 0, camy = 0, camz = 0;
+  function bone(parent, x, y, z) {
+    return { parent: parent, x: x, y: y, z: z, rx: 0, ry: 0, rz: 0 };
+  }
+  // Rest pose in the body frame: +x right, +y up, −z face. rx/ry/rz bend the children.
+  // Bend count skips the hip root, the head, and the nose. Past the spine-and-limb
+  // sticks: skull, clavicles, scapulae, ribs, sternum, pelvis, ulnae, fibulae, heels,
+  // forearms, wrists, and the ball of each foot.
+  var joints = { hips: bone(null, 0, 0.92, 0) };
+  var spineNames = [
+    "l5", "l4", "l3", "l2", "l1",
+    "t12", "t11", "t10", "t9", "t8", "t7", "t6", "t5", "t4", "t3", "t2", "t1",
+    "c7", "c6", "c5", "c4", "c3", "c2"
+  ];
+  var spineParent = "hips";
+  var sp;
+  for (sp = 0; sp < spineNames.length; sp++) {
+    joints[spineNames[sp]] = bone(spineParent, 0, sp < 5 ? 0.038 : 0.022, 0);
+    spineParent = spineNames[sp];
+  }
+  joints.head = bone("c2", 0, 0.1, 0);
+  joints.nose = bone("head", 0, 0.02, -0.1);
+  joints.jaw_l = bone("head", -0.045, -0.08, -0.1);
+  joints.jaw_r = bone("head", 0.045, -0.08, -0.1);
+  joints.crown = bone("head", 0, 0.09, 0.015);
+  joints.occiput = bone("head", 0, 0.02, 0.075);
+  joints.brow_l = bone("head", -0.048, 0.04, -0.062);
+  joints.brow_r = bone("head", 0.048, 0.04, -0.062);
+  joints.temple_l = bone("head", -0.07, 0.015, -0.01);
+  joints.temple_r = bone("head", 0.07, 0.015, -0.01);
+  joints.chin = bone("head", 0, -0.1, -0.12);
+  // Clavicle offsets sum to the old shoulder rest (−0.2, 0.02, 0) so the arm stays put.
+  joints.clavicle_l = bone("t1", -0.12, 0.016, 0.01);
+  joints.shoulder_l = bone("clavicle_l", -0.08, 0.004, -0.01);
+  joints.elbow_l = bone("shoulder_l", 0, -0.28, 0);
+  // Forearm + wrist + hand split the old (0, -0.26, 0) so the hand stays put.
+  joints.forearm_l = bone("elbow_l", 0, -0.04, 0);
+  joints.wrist_l = bone("forearm_l", 0, -0.18, 0);
+  joints.hand_l = bone("wrist_l", 0, -0.04, 0);
+  joints.ulna_l = bone("forearm_l", 0.016, -0.21, 0.014);
+  joints.clavicle_r = bone("t1", 0.12, 0.016, 0.01);
+  joints.shoulder_r = bone("clavicle_r", 0.08, 0.004, -0.01);
+  joints.elbow_r = bone("shoulder_r", 0, -0.28, 0);
+  joints.forearm_r = bone("elbow_r", 0, -0.04, 0);
+  joints.wrist_r = bone("forearm_r", 0, -0.18, 0);
+  joints.hand_r = bone("wrist_r", 0, -0.04, 0);
+  joints.ulna_r = bone("forearm_r", -0.016, -0.21, 0.014);
+  function addFingers(wrist, side, inward) {
+    var fingers = [
+      ["thumb", [[inward * 0.022, -0.038, -0.038], [inward * 0.01, -0.034, -0.024]]],
+      ["index", [[inward * 0.016, -0.1, -0.022], [0, -0.045, 0], [0, -0.038, 0]]],
+      ["middle", [[inward * 0.002, -0.105, -0.004], [0, -0.05, 0], [0, -0.042, 0]]],
+      ["ring", [[inward * -0.012, -0.098, 0.016], [0, -0.045, 0], [0, -0.038, 0]]],
+      ["pinky", [[inward * -0.024, -0.086, 0.032], [0, -0.036, 0], [0, -0.03, 0]]]
+    ];
+    var f, k, parent, segs;
+    for (f = 0; f < fingers.length; f++) {
+      parent = wrist;
+      segs = fingers[f][1];
+      for (k = 0; k < segs.length; k++) {
+        joints[fingers[f][0] + "_" + side + "_" + (k + 1)] = bone(parent, segs[k][0], segs[k][1], segs[k][2]);
+        parent = fingers[f][0] + "_" + side + "_" + (k + 1);
+      }
+    }
+  }
+  addFingers("hand_l", "l", 1);
+  addFingers("hand_r", "r", -1);
+  joints.hip_l = bone("hips", -0.11, 0, 0);
+  joints.knee_l = bone("hip_l", 0, -0.44, 0);
+  joints.ankle_l = bone("knee_l", 0, -0.42, 0);
+  joints.fibula_l = bone("knee_l", -0.018, -0.4, 0.016);
+  joints.heel_l = bone("ankle_l", -0.012, -0.02, 0.055);
+  joints.hip_r = bone("hips", 0.11, 0, 0);
+  joints.knee_r = bone("hip_r", 0, -0.44, 0);
+  joints.ankle_r = bone("knee_r", 0, -0.42, 0);
+  joints.fibula_r = bone("knee_r", 0.018, -0.4, 0.016);
+  joints.heel_r = bone("ankle_r", 0.012, -0.02, 0.055);
+  // Ball takes the near part of the old toe-root offset. Toe tips stay put.
+  joints.ball_l = bone("ankle_l", 0, -0.012, -0.07);
+  joints.ball_r = bone("ankle_r", 0, -0.012, -0.07);
+  function addToes(ball, side, inward) {
+    joints["toe_" + side] = bone(ball, inward * 0.024, -0.008, -0.07);
+    joints["toe_" + side + "_2"] = bone("toe_" + side, 0, -0.008, -0.05);
+    var rest = [
+      [2, inward * 0.008, -0.08, [0.034, 0.02, 0.016]],
+      [3, inward * -0.014, -0.075, [0.032, 0.018, 0.014]],
+      [4, inward * -0.036, -0.06, [0.028, 0.016, 0.012]],
+      [5, inward * -0.054, -0.04, [0.024, 0.014, 0.01]]
+    ];
+    var t, k, parent, name;
+    for (t = 0; t < rest.length; t++) {
+      parent = ball;
+      for (k = 0; k < 3; k++) {
+        name = "toe" + rest[t][0] + "_" + side + "_" + (k + 1);
+        joints[name] = bone(
+          parent,
+          k ? 0 : rest[t][1],
+          k ? -0.005 : -0.008,
+          k ? -rest[t][3][k] : rest[t][2]
+        );
+        parent = name;
+      }
+    }
+  }
+  addToes("ball_l", "l", 1);
+  addToes("ball_r", "r", -1);
+  var ribRoots = [];
+  function addCage() {
+    var names = ["t12", "t11", "t10", "t9", "t8", "t7", "t6", "t5", "t4", "t3"];
+    var i, s, sign, side, n1, widen, out1, drop, fwd, down2;
+    for (i = 0; i < names.length; i++) {
+      widen = i < 4 ? 0.015 : 0;
+      out1 = 0.07 + widen;
+      drop = 0.008 + (1 - i / 9) * 0.018;
+      fwd = 0.09 + (i > 5 ? 0.02 : 0);
+      down2 = 0.016 + (i < 4 ? 0.018 : 0);
+      for (s = 0; s < 2; s++) {
+        sign = s === 0 ? -1 : 1;
+        side = s === 0 ? "l" : "r";
+        n1 = "rib_" + names[i] + "_" + side;
+        joints[n1] = bone(names[i], sign * out1, -drop, 0.035);
+        joints[n1 + "_2"] = bone(n1, sign * 0.028, -down2, -fwd);
+        ribRoots.push(n1);
+      }
+    }
+    joints.sternum = bone("t4", 0, -0.02, -0.1);
+    joints.sternum_2 = bone("sternum", 0, -0.12, -0.015);
+    joints.scapula_l = bone("t2", -0.07, -0.02, 0.05);
+    joints.scapula_l_2 = bone("scapula_l", -0.045, -0.11, 0.015);
+    joints.scapula_r = bone("t2", 0.07, -0.02, 0.05);
+    joints.scapula_r_2 = bone("scapula_r", 0.045, -0.11, 0.015);
+    joints.ilium_l = bone("hips", -0.1, 0.055, 0.025);
+    joints.ilium_l_2 = bone("ilium_l", -0.04, 0.02, -0.045);
+    joints.ilium_r = bone("hips", 0.1, 0.055, 0.025);
+    joints.ilium_r_2 = bone("ilium_r", 0.04, 0.02, -0.045);
+    joints.sacrum = bone("hips", 0, 0.035, 0.06);
+    joints.pubis = bone("hips", 0, -0.05, -0.055);
+  }
+  addCage();
+  var boneNames = [];
+  for (var jointName in joints) {
+    if (joints[jointName].parent) boneNames.push(jointName);
+  }
+  function mul3(a, b) {
+    var o = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+    var r, c;
+    for (r = 0; r < 3; r++) {
+      for (c = 0; c < 3; c++) {
+        o[r * 3 + c] = a[r * 3] * b[c] + a[r * 3 + 1] * b[3 + c] + a[r * 3 + 2] * b[6 + c];
+      }
+    }
+    return o;
+  }
+  function euler(rx, ry, rz) {
+    var cy = Math.cos(ry), sy = Math.sin(ry);
+    var cx = Math.cos(rx), sx = Math.sin(rx);
+    var cz = Math.cos(rz), sz = Math.sin(rz);
+    var yaw = [cy, 0, sy, 0, 1, 0, -sy, 0, cy];
+    var pitch = [1, 0, 0, 0, cx, -sx, 0, sx, cx];
+    var roll = [cz, -sz, 0, sz, cz, 0, 0, 0, 1];
+    return mul3(roll, mul3(pitch, yaw));
+  }
+  function jointLocal(name) {
+    var chain = [];
+    var n = name;
+    while (n) {
+      chain.push(n);
+      n = joints[n].parent;
+    }
+    chain.reverse();
+    var x = 0, y = 0, z = 0;
+    var m = [1, 0, 0, 0, 1, 0, 0, 0, 1];
+    for (var i = 0; i < chain.length; i++) {
+      var j = joints[chain[i]];
+      x += m[0] * j.x + m[1] * j.y + m[2] * j.z;
+      y += m[3] * j.x + m[4] * j.y + m[5] * j.z;
+      z += m[6] * j.x + m[7] * j.y + m[8] * j.z;
+      if (j.rx || j.ry || j.rz) m = mul3(m, euler(j.rx, j.ry, j.rz));
+    }
+    return [x, y, z];
+  }
+
+  function bodyFrame() {
+    if (god) {
+      var b = basis(yaw);
+      return { rx: b.rx, ry: 0, rz: b.rz, ux: 0, uy: 1, uz: 0, fx: b.fx, fy: 0, fz: b.fz };
+    }
+    var s = plantForward();
+    return { rx: s.rx, ry: s.ry, rz: s.rz, ux: s.nx, uy: s.ny, uz: s.nz, fx: fx, fy: fy, fz: fz };
+  }
+
+  // Local body: +x right, +y up, −z face. Face matches the forward already used to move.
+  function bodyPoint(lx, ly, lz) {
+    var f = bodyFrame();
+    return [
+      px - f.ux * EYE + f.rx * lx + f.ux * ly - f.fx * lz,
+      py - f.uy * EYE + f.ry * lx + f.uy * ly - f.fy * lz,
+      pz - f.uz * EYE + f.rz * lx + f.uz * ly - f.fz * lz
+    ];
+  }
+
+  function cameraClear(ex, ey, ez, bx, by, bz, dist) {
+    var minR = R + 0.45;
+    var end = Math.hypot(ex + bx * dist, ey + by * dist, ez + bz * dist);
+    if (end >= minR) return dist;
+    var eb = ex * bx + ey * by + ez * bz;
+    var c = ex * ex + ey * ey + ez * ez - minR * minR;
+    var disc = eb * eb - c;
+    if (disc < 0) return dist;
+    var s = Math.sqrt(disc);
+    var t = dist;
+    var t1 = -eb - s;
+    var t2 = -eb + s;
+    if (t1 > 0.8 && t1 < t) t = t1;
+    if (t2 > 0.8 && t2 < t) t = t2;
+    return Math.max(0.8, t - 0.05);
+  }
+
+  function perspective(aspect) {
+    var f = 1 / Math.tan((70 * Math.PI / 180) / 2);
+    var near = 0.05, far = 200;
+    var nf = 1 / (near - far);
+    proj[0] = f / aspect; proj[1] = 0; proj[2] = 0; proj[3] = 0;
+    proj[4] = 0; proj[5] = f; proj[6] = 0; proj[7] = 0;
+    proj[8] = 0; proj[9] = 0; proj[10] = (far + near) * nf; proj[11] = -1;
+    proj[12] = 0; proj[13] = 0; proj[14] = 2 * far * near * nf; proj[15] = 0;
+  }
+
+  function cameraView() {
+    var cp = Math.cos(pitch), sp = Math.sin(pitch);
+    var r0, r1, r2, u0, u1, u2, b0, b1, b2;
+    if (god) {
+      var cy = Math.cos(yaw), sy = Math.sin(yaw);
+      r0 = cy; r1 = 0; r2 = -sy;
+      u0 = sy * sp; u1 = cp; u2 = cy * sp;
+      b0 = sy * cp; b1 = -sp; b2 = cy * cp;
+    } else {
+      var b = plantForward();
+      var lx = fx * cp + b.nx * sp;
+      var ly = fy * cp + b.ny * sp;
+      var lz = fz * cp + b.nz * sp;
+      r0 = b.rx; r1 = b.ry; r2 = b.rz;
+      u0 = b.nx * cp - fx * sp;
+      u1 = b.ny * cp - fy * sp;
+      u2 = b.nz * cp - fz * sp;
+      b0 = -lx; b1 = -ly; b2 = -lz;
+    }
+    var backDist = cameraClear(px, py, pz, b0, b1, b2, 4.2);
+    camx = px + b0 * backDist;
+    camy = py + b1 * backDist;
+    camz = pz + b2 * backDist;
+    view[0] = r0; view[1] = u0; view[2] = b0; view[3] = 0;
+    view[4] = r1; view[5] = u1; view[6] = b1; view[7] = 0;
+    view[8] = r2; view[9] = u2; view[10] = b2; view[11] = 0;
+    view[12] = -(r0 * camx + r1 * camy + r2 * camz);
+    view[13] = -(u0 * camx + u1 * camy + u2 * camz);
+    view[14] = -(b0 * camx + b1 * camy + b2 * camz);
+    view[15] = 1;
+  }
+
+  function multiply(a, b, out) {
+    for (var c = 0; c < 4; c++) {
+      for (var r = 0; r < 4; r++) {
+        out[c * 4 + r] =
+          a[r] * b[c * 4] +
+          a[4 + r] * b[c * 4 + 1] +
+          a[8 + r] * b[c * 4 + 2] +
+          a[12 + r] * b[c * 4 + 3];
+      }
+    }
+  }
+
+  function fullscreenElement() {
+    return document.fullscreenElement || document.webkitFullscreenElement || null;
+  }
+
+  function fit() {
+    var fs = fullscreenElement();
+    var w = fs ? window.innerWidth : canvas.clientWidth;
+    var h = fs ? window.innerHeight : canvas.clientHeight;
+    if (w < 2) w = window.innerWidth || 0;
+    if (h < 2) h = window.innerHeight || 0;
+    if (w < 2 || h < 2) return false;
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var bw = Math.floor(w * dpr);
+    var bh = Math.floor(h * dpr);
+    if (canvas.width !== bw || canvas.height !== bh) {
+      canvas.width = bw;
+      canvas.height = bh;
+    }
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    perspective(w / h);
+    return true;
+  }
+  window.addEventListener("resize", fit);
+  if (window.ResizeObserver) new ResizeObserver(function () { fit(); }).observe(document.documentElement);
+  fit();
+
+  function clamp1(n) { return n < -1 ? -1 : n > 1 ? 1 : n; }
+
+  function syncStick() {
+    stickF = 0;
+    stickS = 0;
+    var shown = false;
+    for (var id in pointers) {
+      var t = pointers[id];
+      if (t.kind !== "move") continue;
+      stickF += t.f;
+      stickS += t.s;
+      shown = true;
+      stick.style.left = t.ox + "px";
+      stick.style.top = t.oy + "px";
+      nub.style.transform = "translate(" + t.dx + "px," + t.dy + "px)";
+    }
+    stickF = clamp1(stickF);
+    stickS = clamp1(stickS);
+    stick.style.display = shown ? "block" : "none";
+  }
+
+  var mouseLeft = false;
+  var mouseRight = false;
+  var mouseX = 0;
+  var mouseY = 0;
+  function dragDelta(e, x, y) {
+    var dx = e.movementX || 0;
+    var dy = e.movementY || 0;
+    if (!dx && !dy) {
+      dx = e.clientX - x;
+      dy = e.clientY - y;
+    }
+    return { dx: dx, dy: dy };
+  }
+  function looking() { return mouseLeft || mouseRight; }
+
+  function keyboardMove(dt) {
+    var turnLeft = keys.KeyA || keys.ArrowLeft;
+    var turnRight = keys.KeyD || keys.ArrowRight;
+    if (!looking()) {
+      var left = ((turnLeft ? 1 : 0) - (turnRight ? 1 : 0)) * TURN * dt;
+      if (god) yaw += left;
+      else turnBy(left);
+    }
+    var f = (keys.KeyW || keys.ArrowUp ? 1 : 0) - (keys.KeyS || keys.ArrowDown ? 1 : 0);
+    if (mouseLeft && mouseRight) f += 1;
+    var s = (keys.KeyE ? 1 : 0) - (keys.KeyQ ? 1 : 0);
+    if (looking()) s += (turnRight ? 1 : 0) - (turnLeft ? 1 : 0);
+    return {
+      f: clamp1(f + stickF),
+      s: clamp1(s + stickS),
+      u: clamp1((keys.Space || holdUp ? 1 : 0) - (keys.KeyC || keys.ControlLeft || keys.ControlRight || holdDown ? 1 : 0))
+    };
+  }
+
+  if (location.hash === "#selftest") {
+    var extra = [];
+    function note(ok, label) {
+      extra.push((ok ? "ok " : "FAIL ") + label);
+      return ok;
+    }
+    keys = Object.create(null);
+    mouseLeft = false;
+    mouseRight = false;
+    yaw = 0;
+    pitch = 1.2;
+    keys.KeyA = true;
+    keyboardMove(1);
+    var mapOk = note(Math.abs(yaw - TURN) < 0.05, "A turns left");
+    yaw = 0;
+    keys = Object.create(null);
+    keys.KeyW = true;
+    var pitched = keyboardMove(0);
+    px = 0; py = 1.7; pz = 0;
+    step(pitched, 1, false);
+    mapOk = note(Math.abs(px) < 1e-6 && pz < -5, "pitch does not steer W") && mapOk;
+    var yHold = yaw;
+    mouseRight = true;
+    keys = Object.create(null);
+    keys.KeyD = true;
+    var held = keyboardMove(1);
+    mapOk = note(Math.abs(yaw - yHold) < 1e-6 && held.s > 0.9 && held.f === 0, "right mouse D strafes") && mapOk;
+    keys = Object.create(null);
+    mouseLeft = true;
+    var both = keyboardMove(0);
+    mapOk = note(both.f > 0.9, "both buttons run") && mapOk;
+    mouseLeft = false;
+    mouseRight = false;
+    keys = Object.create(null);
+    keys.KeyQ = true;
+    var qYaw = yaw;
+    var q = keyboardMove(1);
+    mapOk = note(Math.abs(yaw - qYaw) < 1e-6 && q.s < -0.9, "Q strafes") && mapOk;
+    keys = Object.create(null);
+    mouseLeft = false;
+    mouseRight = false;
+    function posePole() {
+      px = 0; py = R + EYE; pz = 0;
+      fx = 0; fy = 0; fz = -1;
+      vr = 0; yaw = 0; pitch = 0; god = false;
+    }
+    posePole();
+    var pole = plantForward();
+    mapOk = note(Math.abs(pole.rx - 1) < 1e-4 && Math.abs(pole.rz) < 1e-4 && Math.abs(fz + 1) < 1e-4, "pole faces -z, right +x") && mapOk;
+    posePole();
+    turnBy(Math.PI / 2);
+    mapOk = note(fx < -0.99 && Math.abs(fz) < 0.02, "turn left on the planet faces -x") && mapOk;
+    posePole();
+    walkMove({ f: 1, s: 0, u: 0 }, 0.2, false, false);
+    var dist = Math.hypot(px, py, pz);
+    mapOk = note(Math.abs(dist - (R + EYE)) < 1e-3 && pz < -1 && Math.abs(px) < 0.05, "W walks toward -z") && mapOk;
+    mapOk = note(Math.abs(fx * px + fy * py + fz * pz) < 0.02, "forward stays on the ground") && mapOk;
+    var ax = px, ay = py, az = pz;
+    posePole();
+    pitch = 1.1;
+    walkMove({ f: 1, s: 0, u: 0 }, 0.2, false, false);
+    mapOk = note(Math.abs(px - ax) < 1e-4 && Math.abs(py - ay) < 1e-4 && Math.abs(pz - az) < 1e-4, "pitch does not steer the walk") && mapOk;
+    posePole();
+    walkMove({ f: 0, s: 1, u: 0 }, 0.2, false, false);
+    mapOk = note(px > 1 && Math.abs(pz) < 0.05, "D walks toward +x") && mapOk;
+    posePole();
+    for (var nstep = 0; nstep < 40; nstep++) walkMove({ f: 1, s: 0, u: 0 }, 0.05, false, false);
+    dist = Math.hypot(px, py, pz);
+    mapOk = note(Math.abs(dist - (R + EYE)) < 1e-2 && py / dist < 0.98, "walk follows the curve") && mapOk;
+    posePole();
+    py = R + EYE + 12;
+    for (var nfall = 0; nfall < 160; nfall++) walkMove({ f: 0, s: 0, u: 0 }, 0.05, false, false);
+    dist = Math.hypot(px, py, pz);
+    mapOk = note(Math.abs(dist - (R + EYE)) < 1e-2 && Math.abs(vr) < 1e-2, "fall onto the planet") && mapOk;
+    posePole();
+    walkMove({ f: 0, s: 0, u: 0 }, 0.05, false, true);
+    mapOk = note(Math.hypot(px, py, pz) > R + EYE + 0.1, "jump leaves the planet") && mapOk;
+    posePole();
+    var feet = bodyPoint(0, 0, 0);
+    mapOk = note(Math.abs(Math.hypot(feet[0], feet[1], feet[2]) - R) < 1e-3, "feet stand on the planet") && mapOk;
+    var head = bodyPoint(0, 1.58, 0);
+    var nose = bodyPoint(0, 1.58, -1);
+    mapOk = note(nose[2] - head[2] < -0.9 && Math.abs(nose[0] - head[0]) < 0.02, "body faces -z") && mapOk;
+    posePole();
+    turnBy(Math.PI / 2);
+    head = bodyPoint(0, 1.58, 0);
+    nose = bodyPoint(0, 1.58, -1);
+    mapOk = note(nose[0] - head[0] < -0.9 && Math.abs(nose[2] - head[2]) < 0.05, "body turns left toward -x") && mapOk;
+    posePole();
+    var hipsL = jointLocal("hips");
+    var headL = jointLocal("head");
+    mapOk = note(headL[1] > hipsL[1] + 0.4, "head sits above the hips") && mapOk;
+    var ankleL = jointLocal("ankle_l");
+    var toeL = jointLocal("toe_l");
+    mapOk = note(toeL[2] < ankleL[2] - 0.08, "toes point forward") && mapOk;
+    var shoulderL = jointLocal("shoulder_l");
+    var handBefore = jointLocal("hand_l");
+    joints.elbow_l.rx = 0.7;
+    var handAfter = jointLocal("hand_l");
+    var shoulderAfter = jointLocal("shoulder_l");
+    mapOk = note(
+      Math.hypot(handAfter[0] - handBefore[0], handAfter[1] - handBefore[1], handAfter[2] - handBefore[2]) > 0.05 &&
+      Math.hypot(shoulderAfter[0] - shoulderL[0], shoulderAfter[1] - shoulderL[1], shoulderAfter[2] - shoulderL[2]) < 1e-6,
+      "elbow bends only the hand"
+    ) && mapOk;
+    joints.elbow_l.rx = 0;
+    var spineCount = 0;
+    for (sp = 0; sp < spineNames.length; sp++) if (joints[spineNames[sp]]) spineCount++;
+    mapOk = note(spineCount === 23, "spine has 23 bending joints") && mapOk;
+    var l5p = jointLocal("l5");
+    var c2p = jointLocal("c2");
+    mapOk = note(c2p[1] > l5p[1] + 0.3, "neck sits above the lumbar spine") && mapOk;
+    var jawP = jointLocal("jaw_l");
+    var headP = jointLocal("head");
+    mapOk = note(jawP[1] < headP[1] && jawP[2] < headP[2] - 0.04, "jaw hangs in front of the head") && mapOk;
+    var crownP = jointLocal("crown");
+    var chinP = jointLocal("chin");
+    var t1p = jointLocal("t1");
+    var t2p = jointLocal("t2");
+    var t8p = jointLocal("t8");
+    var ribTip = jointLocal("rib_t8_l_2");
+    var scapP = jointLocal("scapula_l_2");
+    var heelP = jointLocal("heel_l");
+    mapOk = note(crownP[1] > headP[1] + 0.05, "crown sits above the skull") && mapOk;
+    mapOk = note(chinP[2] < headP[2] - 0.08 && chinP[1] < headP[1], "chin hangs in front of the head") && mapOk;
+    mapOk = note(
+      joints.shoulder_l.parent === "clavicle_l" &&
+      joints.clavicle_l.parent === "t1" &&
+      Math.abs((shoulderL[0] - t1p[0]) + 0.2) < 1e-4 &&
+      Math.abs((shoulderL[1] - t1p[1]) - 0.02) < 1e-4 &&
+      Math.abs(shoulderL[2] - t1p[2]) < 1e-4,
+      "clavicle keeps the shoulder on the same rest point"
+    ) && mapOk;
+    mapOk = note(ribTip[0] < t8p[0] - 0.08 && ribTip[2] < t8p[2], "ribs reach out and forward") && mapOk;
+    mapOk = note(scapP[2] > t2p[2] + 0.03 && scapP[0] < t2p[0], "scapula sits behind the chest") && mapOk;
+    mapOk = note(heelP[2] > ankleL[2] + 0.03, "heel sits behind the ankle") && mapOk;
+    mapOk = note(joints.ulna_l.parent === "forearm_l" && joints.fibula_l.parent === "knee_l", "ulna follows the forearm and fibula pairs the shin") && mapOk;
+    var mcp = jointLocal("index_l_1");
+    var tipBefore = jointLocal("index_l_3");
+    joints.index_l_2.rx = 0.8;
+    var tipAfter = jointLocal("index_l_3");
+    var mcpAfter = jointLocal("index_l_1");
+    mapOk = note(
+      Math.hypot(tipAfter[0] - tipBefore[0], tipAfter[1] - tipBefore[1], tipAfter[2] - tipBefore[2]) > 0.02 &&
+      Math.hypot(mcpAfter[0] - mcp[0], mcpAfter[1] - mcp[1], mcpAfter[2] - mcp[2]) < 1e-6,
+      "finger joint bends only the bones past it"
+    ) && mapOk;
+    joints.index_l_2.rx = 0;
+    var leftFingers = 0;
+    var leftToes = (joints.toe_l ? 1 : 0) + (joints.toe_l_2 ? 1 : 0);
+    var rightFingers = 0;
+    var rightToes = (joints.toe_r ? 1 : 0) + (joints.toe_r_2 ? 1 : 0);
+    var bend = 0;
+    var jn;
+    for (jn in joints) {
+      if (/^(thumb|index|middle|ring|pinky)_l_\d+$/.test(jn)) leftFingers++;
+      if (/^(thumb|index|middle|ring|pinky)_r_\d+$/.test(jn)) rightFingers++;
+      if (/^toe[2-5]_l_\d+$/.test(jn)) leftToes++;
+      if (/^toe[2-5]_r_\d+$/.test(jn)) rightToes++;
+      if (jn !== "hips" && jn !== "head" && jn !== "nose") bend++;
+    }
+    mapOk = note(leftFingers === 14 && rightFingers === 14, "14 finger joints on each hand") && mapOk;
+    mapOk = note(leftToes === 14 && rightToes === 14, "14 toe joints on each foot") && mapOk;
+    var ribCount = 0;
+    for (jn in joints) if (/^rib_t\d+_([lr])(_2)?$/.test(jn)) ribCount++;
+    mapOk = note(ribCount === 40, "rib cage has 40 joints") && mapOk;
+    mapOk = note(bend === 166, "166 bending joints") && mapOk;
+    mapOk = note(
+      joints.index_l_1.parent === "hand_l" &&
+      joints.hand_l.parent === "wrist_l" &&
+      joints.wrist_l.parent === "forearm_l" &&
+      joints.forearm_l.parent === "elbow_l" &&
+      joints.ball_l.parent === "ankle_l" &&
+      joints.toe_l.parent === "ball_l" &&
+      joints.heel_l.parent === "ankle_l",
+      "forearm, wrist, and ball sit in the limb chains"
+    ) && mapOk;
+    var hl = jointLocal("hand_l");
+    var tl = jointLocal("thumb_l_1");
+    var hr = jointLocal("hand_r");
+    var tr = jointLocal("thumb_r_1");
+    mapOk = note(tl[0] > hl[0] && tr[0] < hr[0] && tl[2] < hl[2] && tr[2] < hr[2], "thumbs sit inward and forward") && mapOk;
+    posePole();
+    cameraView();
+    mapOk = note(camz > pz + 3 && Math.abs(camx - px) < 0.02, "camera sits behind the body") && mapOk;
+    pitch = 1.2;
+    cameraView();
+    mapOk = note(Math.hypot(camx, camy, camz) > R + 0.3, "camera stays outside the planet") && mapOk;
+    god = true;
+    vr = 0;
+    yaw = 0;
+    pitch = 0;
+    px = 0; py = R + EYE; pz = 0;
+    fx = 0; fy = 0; fz = -1;
+    result.textContent += "\n" + (mapOk ? "MAP PASS" : "MAP FAIL") + "\n" + extra.join("\n");
+    document.title = result.textContent.replace(/\n/g, " | ");
+  }
+
+  function quietSteps() {
+    sound.stepAcc = 0;
+    sound.stepArmed = false;
+    if (!sound.ctx) {
+      sound.stepGains = [];
+      return;
+    }
+    var t = sound.ctx.currentTime;
+    var i;
+    for (i = 0; i < sound.stepGains.length; i++) {
+      try {
+        sound.stepGains[i].gain.cancelScheduledValues(t);
+        sound.stepGains[i].gain.setTargetAtTime(0.0001, t, 0.012);
+      } catch (err) {}
+    }
+    sound.stepGains = [];
+  }
+
+  function ensureSound() {
+    if (sound.dead || sound.ctx) return sound.ctx;
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) {
+      sound.dead = true;
+      return null;
+    }
+    try {
+      var ctx = new AC();
+      var master = ctx.createGain();
+      master.gain.value = 0;
+      master.connect(ctx.destination);
+      var noiseLen = ctx.sampleRate * 2;
+      var noiseBuf = ctx.createBuffer(1, noiseLen, ctx.sampleRate);
+      var data = noiseBuf.getChannelData(0);
+      var i;
+      for (i = 0; i < noiseLen; i++) data[i] = Math.random() * 2 - 1;
+
+      var low = ctx.createOscillator();
+      var lowBeat = ctx.createOscillator();
+      var mid = ctx.createOscillator();
+      low.type = "sine";
+      lowBeat.type = "sine";
+      mid.type = "triangle";
+      low.frequency.value = 49;
+      lowBeat.frequency.value = 49.35;
+      mid.frequency.value = 73.5;
+      var lowG = ctx.createGain();
+      var midG = ctx.createGain();
+      lowG.gain.value = 0.045;
+      midG.gain.value = 0.012;
+      var drift = ctx.createOscillator();
+      var driftG = ctx.createGain();
+      drift.type = "sine";
+      drift.frequency.value = 0.055;
+      driftG.gain.value = 0.016;
+      drift.connect(driftG);
+      driftG.connect(lowG.gain);
+      low.connect(lowG);
+      lowBeat.connect(lowG);
+      lowG.connect(master);
+      mid.connect(midG);
+      midG.connect(master);
+      low.start();
+      lowBeat.start();
+      mid.start();
+      drift.start();
+
+      var wind = ctx.createBufferSource();
+      wind.buffer = noiseBuf;
+      wind.loop = true;
+      var hip = ctx.createBiquadFilter();
+      hip.type = "highpass";
+      hip.frequency.value = 900;
+      var lop = ctx.createBiquadFilter();
+      lop.type = "lowpass";
+      lop.frequency.value = 2600;
+      var windG = ctx.createGain();
+      windG.gain.value = 0.014;
+      var gust = ctx.createOscillator();
+      var gustG = ctx.createGain();
+      gust.frequency.value = 0.04;
+      gustG.gain.value = 0.006;
+      gust.connect(gustG);
+      gustG.connect(windG.gain);
+      wind.connect(hip);
+      hip.connect(lop);
+      lop.connect(windG);
+      windG.connect(master);
+      wind.start();
+      gust.start();
+
+      var fly = ctx.createBufferSource();
+      fly.buffer = noiseBuf;
+      fly.loop = true;
+      var flyF = ctx.createBiquadFilter();
+      flyF.type = "bandpass";
+      flyF.frequency.value = 420;
+      flyF.Q.value = 0.65;
+      var flyG = ctx.createGain();
+      flyG.gain.value = 0;
+      fly.connect(flyF);
+      flyF.connect(flyG);
+      flyG.connect(master);
+      fly.start();
+
+      sound.ctx = ctx;
+      sound.master = master;
+      sound.noise = noiseBuf;
+      sound.flyG = flyG;
+      sound.flyF = flyF;
+      return ctx;
+    } catch (err) {
+      sound.dead = true;
+      sound.ctx = null;
+      return null;
+    }
+  }
+
+  function resumeSound(ctx) {
+    try {
+      if (!ctx || !ctx.resume || ctx.state !== "suspended") return;
+      var pending = ctx.resume();
+      if (pending && pending.catch) pending.catch(function () {});
+    } catch (err) {}
+  }
+
+  function unlockSound() {
+    if (sound.dead) return;
+    if (sound.unlocked) {
+      resumeSound(sound.ctx);
+      return;
+    }
+    var ctx = ensureSound();
+    if (!ctx) return;
+    sound.unlocked = true;
+    try {
+      var level = sound.muted ? 0 : 0.36;
+      sound.master.gain.setValueAtTime(0, ctx.currentTime);
+      sound.master.gain.linearRampToValueAtTime(level, ctx.currentTime + 0.9);
+    } catch (err) {}
+    resumeSound(ctx);
+  }
+
+  function applyMute() {
+    var btn = document.getElementById("mute");
+    if (btn) {
+      btn.textContent = sound.muted ? "Unmute" : "Mute";
+      btn.setAttribute("aria-pressed", sound.muted ? "true" : "false");
+    }
+    if (sound.muted) quietSteps();
+    if (!sound.master || !sound.ctx) return;
+    try {
+      var level = sound.muted ? 0 : 0.36;
+      sound.master.gain.cancelScheduledValues(sound.ctx.currentTime);
+      sound.master.gain.setTargetAtTime(level, sound.ctx.currentTime, 0.04);
+    } catch (err) {}
+  }
+
+  function playStep(sprint) {
+    try {
+      if (!sound.unlocked || sound.muted || !sound.ctx || !sound.noise) return;
+      if (sound.ctx.state === "suspended") return;
+      var ctx = sound.ctx;
+      var t = ctx.currentTime;
+      sound.stepN = sound.stepN ? 0 : 1;
+      var src = ctx.createBufferSource();
+      src.buffer = sound.noise;
+      var filter = ctx.createBiquadFilter();
+      filter.type = "lowpass";
+      filter.frequency.value = (sprint ? 640 : 380) * (sound.stepN ? 1.12 : 0.9);
+      var gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(sprint ? 0.16 : 0.11, t + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + (sprint ? 0.055 : 0.08));
+      src.connect(filter);
+      filter.connect(gain);
+      gain.connect(sound.master);
+      src.start(t);
+      src.stop(t + 0.1);
+      var thump = ctx.createOscillator();
+      thump.type = "sine";
+      thump.frequency.setValueAtTime(sound.stepN ? 96 : 74, t);
+      thump.frequency.exponentialRampToValueAtTime(42, t + 0.07);
+      var thumpG = ctx.createGain();
+      thumpG.gain.setValueAtTime(0.0001, t);
+      thumpG.gain.exponentialRampToValueAtTime(sprint ? 0.08 : 0.06, t + 0.008);
+      thumpG.gain.exponentialRampToValueAtTime(0.0001, t + 0.07);
+      thump.connect(thumpG);
+      thumpG.connect(sound.master);
+      thump.start(t);
+      thump.stop(t + 0.09);
+      sound.stepGains.push(gain, thumpG);
+      if (sound.stepGains.length > 8) sound.stepGains.splice(0, sound.stepGains.length - 8);
+    } catch (err) {}
+  }
+
+  function playJump() {
+    try {
+      if (!sound.unlocked || sound.muted || !sound.ctx || !sound.noise) return;
+      if (sound.ctx.state === "suspended") return;
+      var ctx = sound.ctx;
+      var t = ctx.currentTime;
+      var body = ctx.createOscillator();
+      body.type = "sine";
+      body.frequency.setValueAtTime(150, t);
+      body.frequency.exponentialRampToValueAtTime(58, t + 0.16);
+      var bodyG = ctx.createGain();
+      bodyG.gain.setValueAtTime(0.0001, t);
+      bodyG.gain.exponentialRampToValueAtTime(0.12, t + 0.018);
+      bodyG.gain.exponentialRampToValueAtTime(0.0001, t + 0.17);
+      body.connect(bodyG);
+      bodyG.connect(sound.master);
+      body.start(t);
+      body.stop(t + 0.18);
+      var air = ctx.createBufferSource();
+      air.buffer = sound.noise;
+      var band = ctx.createBiquadFilter();
+      band.type = "bandpass";
+      band.Q.value = 0.7;
+      band.frequency.setValueAtTime(280, t);
+      band.frequency.exponentialRampToValueAtTime(980, t + 0.12);
+      var airG = ctx.createGain();
+      airG.gain.setValueAtTime(0.0001, t);
+      airG.gain.exponentialRampToValueAtTime(0.07, t + 0.03);
+      airG.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+      air.connect(band);
+      band.connect(airG);
+      airG.connect(sound.master);
+      air.start(t);
+      air.stop(t + 0.18);
+    } catch (err) {}
+  }
+
+  function mixMotion(inp, dt, sprint) {
+    var moved = Math.hypot(px - sound.prevX, py - sound.prevY, pz - sound.prevZ);
+    sound.prevX = px;
+    sound.prevY = py;
+    sound.prevZ = pz;
+    if (!sound.unlocked || !sound.ctx || !sound.flyG || !sound.flyF) return;
+    try {
+      var speed = dt > 0 ? moved / dt : 0;
+      var t = sound.ctx.currentTime;
+      var fly = 0;
+      if (god && !sound.muted) fly = Math.max(0, Math.min(1, speed / FAST));
+      sound.flyG.gain.setTargetAtTime(fly * 0.14, t, fly > 0 ? 0.14 : 0.05);
+      sound.flyF.frequency.setTargetAtTime(340 + fly * 1500, t, 0.1);
+      if (god || sound.muted) {
+        if (sound.stepArmed) quietSteps();
+        return;
+      }
+      var dist = Math.hypot(px, py, pz);
+      var grounded = Math.abs(dist - (R + EYE)) <= 0.12 && vr <= 0;
+      var walk = Math.min(1, Math.hypot(inp.f, inp.s));
+      if (!grounded || walk < 0.08) {
+        if (sound.stepArmed) quietSteps();
+        return;
+      }
+      if (!sound.stepArmed) {
+        sound.stepArmed = true;
+        sound.stepAcc = 1;
+      }
+      sound.stepAcc += dt * (sound.stepHz || (sprint ? 3.5 : 2.2)) * walk;
+      if (sound.stepAcc >= 1) {
+        sound.stepAcc -= 1;
+        if (sound.stepAcc > 1) sound.stepAcc = 0;
+        playStep(sprint);
+      }
+    } catch (err) {}
+  }
+
+  function onKey(e, down) {
+    keys[e.code] = down;
+    if (down && (e.code === "Space" || e.code.indexOf("Arrow") === 0)) e.preventDefault();
+    if (down && (e.code === "KeyQ" || e.code === "KeyE")) hint.classList.add("gone");
+  }
+  window.addEventListener("keydown", function (e) { onKey(e, true); });
+  window.addEventListener("keyup", function (e) { onKey(e, false); });
+  window.addEventListener("blur", function () {
+    keys = Object.create(null);
+    mouseLeft = false;
+    mouseRight = false;
+    canvas.style.cursor = "";
+  });
+
+  function kindFor(e) {
+    var rect = canvas.getBoundingClientRect();
+    return (e.clientX - rect.left) < rect.width * 0.5 ? "move" : "look";
+  }
+
+  canvas.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+  canvas.addEventListener("pointerdown", function (e) {
+    if (e.pointerType !== "touch") {
+      if (e.button === 0) mouseLeft = true;
+      else if (e.button === 2) mouseRight = true;
+      else return;
+      e.preventDefault();
+      canvas.focus();
+      canvas.setPointerCapture(e.pointerId);
+      canvas.style.cursor = "none";
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+      if (mouseLeft && mouseRight) hint.classList.add("gone");
+      return;
+    }
+    pointers[e.pointerId] = {
+      kind: kindFor(e),
+      ox: e.clientX,
+      oy: e.clientY,
+      lx: e.clientX,
+      ly: e.clientY,
+      dx: 0,
+      dy: 0,
+      f: 0,
+      s: 0
+    };
+    canvas.focus();
+    canvas.setPointerCapture(e.pointerId);
+    syncStick();
+  });
+  function endPointer(e) {
+    if (e.pointerType !== "touch") {
+      if (e.button === 0) mouseLeft = false;
+      if (e.button === 2) mouseRight = false;
+      if (!looking()) canvas.style.cursor = "";
+      return;
+    }
+    delete pointers[e.pointerId];
+    syncStick();
+  }
+  canvas.addEventListener("pointerup", endPointer);
+  canvas.addEventListener("pointercancel", endPointer);
+  canvas.addEventListener("pointermove", function (e) {
+    if (e.pointerType !== "touch") {
+      if (!looking()) return;
+      var moved = dragDelta(e, mouseX, mouseY);
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+      lookBy(moved.dx, mouseRight ? moved.dy : 0);
+      return;
+    }
+    var t = pointers[e.pointerId];
+    if (!t) return;
+    if (t.kind === "look") {
+      var looked = dragDelta(e, t.lx, t.ly);
+      t.lx = e.clientX;
+      t.ly = e.clientY;
+      lookBy(looked.dx, looked.dy);
+      return;
+    }
+    var dx = e.clientX - t.ox;
+    var dy = e.clientY - t.oy;
+    var max = 32;
+    var mag = Math.hypot(dx, dy);
+    if (mag > max) {
+      dx *= max / mag;
+      dy *= max / mag;
+    }
+    t.dx = dx;
+    t.dy = dy;
+    t.s = dx / max;
+    t.f = -dy / max;
+    syncStick();
+    hint.classList.add("gone");
+  });
+
+  function bindHold(id, up) {
+    var btn = document.getElementById(id);
+    function set(on, e) {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      if (up) holdUp = on;
+      else holdDown = on;
+      btn.classList.toggle("held", on);
+      if (on) hint.classList.add("gone");
+    }
+    btn.addEventListener("pointerdown", function (e) {
+      e.preventDefault();
+      btn.blur();
+      if (window.getSelection) {
+        var sel = window.getSelection();
+        if (sel && sel.removeAllRanges) sel.removeAllRanges();
+      }
+      set(true, e);
+    });
+    btn.addEventListener("mousedown", function (e) { e.preventDefault(); });
+    btn.addEventListener("selectstart", function (e) { e.preventDefault(); });
+    btn.addEventListener("dragstart", function (e) { e.preventDefault(); });
+    btn.addEventListener("pointerup", function (e) { set(false, e); });
+    btn.addEventListener("pointercancel", function (e) { set(false, e); });
+    btn.addEventListener("pointerleave", function (e) { set(false, e); });
+  }
+  bindHold("up", true);
+  bindHold("down", false);
+
+  function setFullLabel() {
+    var on = !!fullscreenElement();
+    var next = on ? "Exit full screen" : "Full screen";
+    fullBtn.setAttribute("aria-pressed", on ? "true" : "false");
+    if (fullBtn.textContent !== next) {
+      fullBtn.textContent = next;
+      say(on ? "Full screen" : "Window");
+    }
+  }
+  function requestWholeScreen() {
+    var el = document.documentElement;
+    if (el.requestFullscreen) return el.requestFullscreen({ navigationUI: "hide" });
+    if (el.webkitRequestFullscreen) return Promise.resolve(el.webkitRequestFullscreen());
+    return Promise.reject(new Error("unavailable"));
+  }
+  function exitWholeScreen() {
+    if (document.exitFullscreen && fullscreenElement()) return document.exitFullscreen();
+    if (document.webkitExitFullscreen) return Promise.resolve(document.webkitExitFullscreen());
+    return Promise.resolve();
+  }
+  fullBtn.addEventListener("click", function (e) {
+    e.stopPropagation();
+    e.preventDefault();
+    var op = fullscreenElement() ? exitWholeScreen() : requestWholeScreen();
+    Promise.resolve(op).then(function () {
+      setFullLabel();
+      fit();
+    }).catch(function () {
+      if (fullBtn.textContent !== "Full screen blocked") say("Full screen blocked");
+      fullBtn.textContent = "Full screen blocked";
+    });
+  });
+  document.addEventListener("fullscreenchange", function () {
+    setFullLabel();
+    fit();
+  });
+  document.addEventListener("webkitfullscreenchange", function () {
+    setFullLabel();
+    fit();
+  });
+
+  var godBox = document.getElementById("godbox");
+  var godLabel = document.getElementById("god");
+  god = godBox.checked;
+  function stopGod(e) { e.stopPropagation(); }
+  godLabel.addEventListener("pointerdown", stopGod);
+  godBox.addEventListener("change", function () {
+    var wasGod = god;
+    god = godBox.checked;
+    if (god && !wasGod) adoptWorldYaw();
+    if (!god && wasGod) adoptSurfaceForward();
+    if (god) vr = 0;
+    hint.classList.add("gone");
+    say(god ? "Flying" : "On the ground");
+  });
+
+  var muteBtn = document.getElementById("mute");
+  muteBtn.addEventListener("pointerdown", function (e) {
+    e.stopPropagation();
+  });
+  muteBtn.addEventListener("keydown", function (e) {
+    if (e.code === "Space" || e.code === "Enter") e.stopPropagation();
+  });
+  muteBtn.addEventListener("click", function (e) {
+    e.stopPropagation();
+    e.preventDefault();
+    sound.muted = !sound.muted;
+    applyMute();
+    say(sound.muted ? "Muted" : "Sound on");
+    if (!sound.muted) unlockSound();
+  });
+  function onGesture(e) {
+    if (e.target && e.target.closest && e.target.closest("#mute")) return;
+    unlockSound();
+  }
+  window.addEventListener("pointerdown", onGesture, true);
+  window.addEventListener("keydown", onGesture, true);
+
+  // Poses from god / grounded / speed. A missing joint is skipped.
+  // #selftest keeps the rest pose so the joint checks stay valid.
+  // Cycles use raised cosines so joints ease through each phase.
+  // The lower foot is planted on the ground so a bent knee drops the hips.
+  var animT = 0;
+  var gaitPhase = 0;
+  var gaitLive = false;
+  var wasAir = false;
+  var landHold = 0;
+  var airTime = 0;
+  var poseMode = "";
+  var modeFrom = null;
+  var modeMix = 1;
+  var blendWindow = 0.18;
+  var hipsRestX = joints.hips.x;
+  var hipsRestY = joints.hips.y;
+  var limbLag = { fl: 0, fr: 0, wl: 0, wr: 0, hx: 0, hy: 0 };
+
+  function poseSet(name, rx, ry, rz) {
+    var j = joints[name];
+    if (!j) return;
+    j.rx = rx;
+    j.ry = ry;
+    j.rz = rz;
+  }
+
+  function poseBlend(name, rx, ry, rz, k) {
+    var j = joints[name];
+    if (!j) return;
+    j.rx += (rx - j.rx) * k;
+    j.ry += (ry - j.ry) * k;
+    j.rz += (rz - j.rz) * k;
+  }
+
+  function poseZero() {
+    var n;
+    for (n in joints) {
+      joints[n].rx = 0;
+      joints[n].ry = 0;
+      joints[n].rz = 0;
+    }
+  }
+
+  function lobe(p) {
+    var u = 0.5 + 0.5 * Math.cos(p);
+    return u * u;
+  }
+
+  function damp(cur, target, dt, rate) {
+    return cur + (target - cur) * (1 - Math.exp(-rate * dt));
+  }
+
+  function resetRoot() {
+    joints.hips.x = hipsRestX;
+    joints.hips.y = hipsRestY;
+  }
+
+  function lowestFoot(side) {
+    var names = ["ball_" + side, "toe_" + side, "heel_" + side];
+    var i, y, low;
+    low = 1e9;
+    for (i = 0; i < names.length; i++) {
+      y = jointLocal(names[i])[1];
+      if (y < low) low = y;
+    }
+    return low;
+  }
+
+  function settleFeet(lift) {
+    var fl = jointLocal("ball_l");
+    var fr = jointLocal("ball_r");
+    var dx = fl[1] - fr[1];
+    if (dx > 0.1) dx = 0.1;
+    if (dx < -0.1) dx = -0.1;
+    joints.hips.x = hipsRestX + dx * 0.55;
+    var low = lowestFoot("l");
+    var right = lowestFoot("r");
+    if (right < low) low = right;
+    joints.hips.y += (0.012 + (lift || 0)) - low;
+  }
+
+  function bendSpine(rxL, rxT, rxC, ryL, ryT, rz) {
+    // Arguments are the total bend of that region. +rx arches the chest back.
+    var last = spineNames.length - 1;
+    var i, t, lum, mid, neck, w, weights, sumL, sumM, sumN, rx, ry, rzv;
+    weights = [];
+    sumL = 0;
+    sumM = 0;
+    sumN = 0;
+    for (i = 0; i < spineNames.length; i++) {
+      t = i / last;
+      lum = Math.pow(Math.cos(t * Math.PI * 0.5), 1.35);
+      neck = Math.pow(Math.sin(t * Math.PI * 0.5), 1.35);
+      mid = Math.sin(t * Math.PI);
+      w = lum + mid + neck;
+      weights.push([lum / w, mid / w, neck / w]);
+      sumL += lum / w;
+      sumM += mid / w;
+      sumN += neck / w;
+    }
+    for (i = 0; i < spineNames.length; i++) {
+      rx = weights[i][0] * rxL / sumL + weights[i][1] * rxT / sumM + weights[i][2] * rxC / sumN;
+      ry = weights[i][0] * ryL / sumL + weights[i][1] * ryT / sumM + weights[i][2] * ryT * 0.4 / sumN;
+      rzv = weights[i][0] * rz / sumL + weights[i][1] * rz * 0.7 / sumM + weights[i][2] * rz * 0.3 / sumN;
+      poseSet(spineNames[i], rx, ry, rzv);
+    }
+  }
+
+  function curlFingers(side, curl, phase) {
+    var inward = side === "l" ? 1 : -1;
+    var names = ["index", "middle", "ring", "pinky"];
+    var i, n, f, w;
+    poseSet("hand_" + side, 0.16 * curl, 0, 0);
+    poseSet("thumb_" + side + "_1", 0.38 * curl, 0, inward * 0.26 * curl);
+    poseSet("thumb_" + side + "_2", 0.46 * curl, 0, 0);
+    for (i = 0; i < names.length; i++) {
+      if (phase == null) f = curl;
+      else {
+        w = Math.sin(phase - i * 0.42);
+        f = curl * (0.62 + 0.38 * w);
+      }
+      n = names[i] + "_" + side + "_";
+      poseSet(n + "1", 0.5 * f, 0, (i - 1.5) * 0.05 * f);
+      poseSet(n + "2", 0.72 * f, 0, 0);
+      poseSet(n + "3", 0.4 * f, 0, 0);
+    }
+  }
+
+  function bendToes(side, rx, peel) {
+    var i, k, amt, drop;
+    drop = peel || 0;
+    poseSet("toe_" + side, rx, 0, 0);
+    poseSet("toe_" + side + "_2", rx * (0.65 + 0.25 * drop), 0, 0);
+    for (i = 2; i <= 5; i++) {
+      amt = rx * (1 - (i - 1) * 0.18 * drop);
+      for (k = 1; k <= 3; k++) poseSet("toe" + i + "_" + side + "_" + k, amt * (k === 1 ? 1 : 0.55), 0, 0);
+    }
+  }
+
+  function poseLeg(side, hip, knee, ankle, toe, ball, heel) {
+    poseSet("hip_" + side, hip, 0, 0);
+    poseSet("knee_" + side, knee, 0, 0);
+    poseSet("ankle_" + side, ankle, 0, 0);
+    if (ball == null) ball = ankle > 0 ? ankle * 0.35 : ankle * 0.15;
+    if (heel == null) heel = ankle > 0 ? ankle * 0.4 : -ankle * 0.25;
+    poseSet("ball_" + side, ball, 0, 0);
+    poseSet("heel_" + side, heel, 0, 0);
+    bendToes(side, toe, 0);
+  }
+
+  function poseArm(side, shoulderRx, elbowRx, curl, spread, forearmRy, wristRx, wristRz, fingerPhase) {
+    var outward = side === "l" ? -1 : 1;
+    if (forearmRy == null) forearmRy = elbowRx * 0.16;
+    if (wristRx == null) wristRx = elbowRx * 0.2;
+    if (wristRz == null) wristRz = outward * spread * 0.18;
+    poseSet("clavicle_" + side, shoulderRx * 0.12, 0, outward * spread * 0.22);
+    poseSet("shoulder_" + side, shoulderRx, 0, outward * spread);
+    poseSet("elbow_" + side, elbowRx, 0, 0);
+    poseSet("forearm_" + side, 0, forearmRy, 0);
+    poseSet("wrist_" + side, wristRx, 0, wristRz);
+    poseSet("scapula_" + side, shoulderRx * 0.3, 0, outward * spread * 0.35);
+    curlFingers(side, curl, fingerPhase);
+  }
+
+  function poseRibs(breath) {
+    var i, name, sign;
+    for (i = 0; i < ribRoots.length; i++) {
+      name = ribRoots[i];
+      sign = name.substring(name.length - 2) === "_l" ? -1 : 1;
+      poseSet(name, breath * 0.22, 0, sign * breath * 0.16);
+      poseSet(name + "_2", breath * 0.28, 0, sign * breath * 0.1);
+    }
+    poseSet("sternum", breath * 0.08, 0, 0);
+    poseSet("sternum_2", breath * 0.05, 0, 0);
+  }
+
+  function poseIdle(rate, armOut, soft) {
+    var breath = Math.sin(animT * 1.35);
+    var shift = Math.sin(animT * 1.15);
+    var sway = Math.sin(animT * 0.7);
+    var onR = 0.5 + 0.5 * shift;
+    var onL = 1 - onR;
+    resetRoot();
+    poseSet("hips", -0.02 + breath * 0.01, -shift * 0.06, -shift * 0.035);
+    bendSpine(-0.06 + breath * 0.02, -0.03, 0.05, sway * 0.05, -sway * 0.04, -shift * 0.07);
+    poseSet("head", 0.04 - breath * 0.02, sway * 0.1, shift * 0.02);
+    poseArm("l", 0.28 + onR * 0.05 + sway * 0.04, 0.72 + soft * 0.15 + onL * 0.06, 0.3, armOut + 0.16, 0.28, 0.04, -0.04, null);
+    poseArm("r", 0.28 + onL * 0.05 - sway * 0.04, 0.72 + soft * 0.15 + onR * 0.06, 0.3, armOut + 0.16, -0.28, 0.04, 0.04, null);
+    poseSet("hip_l", 0.04 + onR * 0.08, 0, -0.06 - onR * 0.03);
+    poseSet("hip_r", 0.04 + onL * 0.08, 0, 0.06 + onL * 0.03);
+    poseSet("knee_l", -(0.12 + onR * 0.16), 0, 0);
+    poseSet("knee_r", -(0.12 + onL * 0.16), 0, 0);
+    poseSet("ankle_l", 0.08 + onR * 0.06, 0, 0);
+    poseSet("ankle_r", 0.08 + onL * 0.06, 0, 0);
+    poseSet("ball_l", 0.05, 0, 0);
+    poseSet("ball_r", 0.05, 0, 0);
+    poseSet("heel_l", 0.04, 0, 0);
+    poseSet("heel_r", 0.04, 0, 0);
+    bendToes("l", 0.05, 0);
+    bendToes("r", 0.05, 0);
+    poseRibs(breath * 0.45);
+    settleFeet(0);
+  }
+
+  function poseRun(sprinting, moveAmt) {
+    var amp = sprinting ? 1 : (0.78 + 0.22 * moveAmt);
+    var hipAmp = (sprinting ? 0.52 : 0.4) * amp;
+    var lean = sprinting ? 0.28 : 0.16;
+    var armAmp = (sprinting ? 0.62 : 0.48) * amp;
+    var kneeSwing = (sprinting ? 0.85 : 0.62) * amp;
+    var s = Math.sin(gaitPhase);
+    var c = Math.cos(gaitPhase);
+    resetRoot();
+    poseSet("hips", -lean * 0.2, -s * 0.28 * amp, c * 0.08 * amp);
+    bendSpine(-lean, -lean * 0.55, lean * 0.7, s * 0.08, -s * 0.46, -s * 0.14);
+    poseSet("head", 0.02, -s * 0.05, s * 0.04);
+    function leg(side, p) {
+      var sp = Math.sin(p);
+      var swing = lobe(p);
+      var toeOff = lobe(p - 4.712389);
+      var yieldB = lobe(p - 2.15);
+      var strike = lobe(p - 1.570796);
+      var outward = side === "l" ? -1 : 1;
+      poseSet("hip_" + side, sp * hipAmp, 0, outward * (0.05 + swing * 0.22) * amp);
+      poseSet("knee_" + side, -(0.045 + swing * kneeSwing + yieldB * 0.15), 0, 0);
+      poseSet("ankle_" + side, 0.04 + swing * 0.34 * amp - toeOff * 0.58, 0, 0);
+      poseSet("ball_" + side, toeOff * 0.46, 0, 0);
+      poseSet("heel_" + side, strike * 0.2 - toeOff * 0.06, 0, 0);
+      bendToes(side, 0.03 + toeOff * 0.4, toeOff);
+    }
+    leg("l", gaitPhase);
+    leg("r", gaitPhase + Math.PI);
+    function arm(side, sign) {
+      var sp = Math.sin(gaitPhase) * sign;
+      var shoulder = -sp * armAmp + lean * 0.45;
+      var back = 0.5 + 0.5 * sp;
+      var elbow = 0.55 + (sprinting ? 0.08 : 0.04) + back * (sprinting ? 0.32 : 0.22);
+      var flare = 0.12 + back * (sprinting ? 0.28 : 0.22);
+      poseArm(side, shoulder, elbow, sprinting ? 0.5 : 0.38, flare, -sp * 0.12, 0.02 + (1 - back) * 0.08, sign * 0.03, null);
+    }
+    arm("l", 1);
+    arm("r", -1);
+    poseRibs(c * 0.16);
+    settleFeet(0);
+  }
+
+  function poseAir(timeInAir) {
+    var rise = vr > 0 ? Math.min(1, vr / 7) : 0;
+    var fall = vr < 0 ? Math.min(1, -vr / 10) : 0;
+    var launch = Math.exp(-timeInAir * 6.5);
+    var wLaunch = launch * (0.35 + 0.65 * rise);
+    var wUp = (1 - launch) * rise;
+    var wFall = fall * (1 - 0.35 * launch);
+    var wHang = Math.max(0, 1 - rise - fall);
+    var sum = wLaunch + wUp + wHang + wFall;
+    if (sum < 1e-4) sum = 1;
+    wLaunch /= sum;
+    wUp /= sum;
+    wHang /= sum;
+    wFall /= sum;
+    function mix(a, b, c, d) {
+      return a * wLaunch + b * wUp + c * wHang + d * wFall;
+    }
+    var split = Math.sin(timeInAir * 2.4) * 0.05 * (wHang + wFall);
+    resetRoot();
+    bendSpine(mix(-0.42, -0.18, 0.04, 0.1), mix(-0.16, -0.06, 0.03, 0.06), mix(0.22, 0.12, -0.04, -0.1), 0, 0, 0);
+    poseSet("head", mix(0.06, -0.04, 0.02, 0.08), 0, 0);
+    poseArm("l", mix(2.15, 1.9, 1.25, 1.05), mix(0.32, 0.62, 0.42, 0.28), mix(0.28, 0.5, 0.3, 0.24), mix(0.12, 0.2, 0.38, 0.5), mix(0.08, 0.22, 0.08, -0.06), mix(0.04, 0.16, 0.04, -0.04), -0.08, null);
+    poseArm("r", mix(2.15, 1.9, 1.25, 1.05), mix(0.32, 0.62, 0.42, 0.28), mix(0.28, 0.5, 0.3, 0.24), mix(0.12, 0.2, 0.38, 0.5), mix(0.08, 0.22, 0.08, -0.06), mix(0.04, 0.16, 0.04, -0.04), 0.08, null);
+    poseSet("hip_l", mix(0.12, 0.85, 0.38, 0.1), 0, -0.06 - split);
+    poseSet("hip_r", mix(0.12, 0.85, 0.38, 0.1), 0, 0.06 + split);
+    poseSet("knee_l", -mix(0.28, 1.25, 0.62, 0.26), 0, 0);
+    poseSet("knee_r", -mix(0.28, 1.25, 0.62, 0.26), 0, 0);
+    poseSet("ankle_l", mix(-0.08, 0.3, 0.12, -0.12), 0, 0);
+    poseSet("ankle_r", mix(-0.08, 0.3, 0.12, -0.12), 0, 0);
+    poseSet("ball_l", 0.08, 0, 0);
+    poseSet("ball_r", 0.08, 0, 0);
+    poseSet("heel_l", mix(0.04, 0.1, 0.05, -0.04), 0, 0);
+    poseSet("heel_r", mix(0.04, 0.1, 0.05, -0.04), 0, 0);
+    bendToes("l", 0.06, 0);
+    bendToes("r", 0.06, 0);
+  }
+
+  function poseLand(k) {
+    var i, t, last, ease;
+    ease = k * k * (3 - 2 * k);
+    last = spineNames.length - 1;
+    for (i = 0; i < spineNames.length; i++) {
+      t = i / last;
+      poseBlend(spineNames[i], -0.045 * Math.pow(1 - t, 1.15) + 0.016 * Math.pow(t, 1.2), 0, 0, ease);
+    }
+    poseBlend("head", 0.06, 0, 0, ease);
+    poseBlend("hips", 0.06, 0, 0, ease);
+    poseBlend("shoulder_l", 0.8, 0, -0.16, ease);
+    poseBlend("shoulder_r", 0.8, 0, 0.16, ease);
+    poseBlend("elbow_l", 0.65, 0, 0, ease);
+    poseBlend("elbow_r", 0.65, 0, 0, ease);
+    poseBlend("hip_l", 0.5, 0, -0.05, ease);
+    poseBlend("hip_r", 0.5, 0, 0.05, ease);
+    poseBlend("knee_l", -0.98, 0, 0, ease);
+    poseBlend("knee_r", -0.98, 0, 0, ease);
+    poseBlend("ankle_l", 0.26, 0, 0, ease);
+    poseBlend("ankle_r", 0.26, 0, 0, ease);
+    poseBlend("ball_l", 0.2, 0, 0, ease);
+    poseBlend("ball_r", 0.2, 0, 0, ease);
+  }
+
+  function poseHover(inp) {
+    // The camera sits behind, so the readable motion is out to the sides.
+    var w = Math.sin(animT * 1.45);
+    var q = Math.cos(animT * 1.45);
+    var drift = Math.sin(animT * 0.42);
+    var travel = Math.hypot(inp.f, inp.s, inp.u);
+    var lean = 0;
+    var bank = 0;
+    if (travel > 0.04) {
+      lean = -inp.f * 0.16;
+      bank = -inp.s * 0.1;
+    }
+    resetRoot();
+    bendSpine(-0.05 + lean * 0.9, lean * 0.35, -lean * 0.25, drift * 0.04, 0, bank * 0.85);
+    poseSet("head", 0.03 + drift * 0.03 - lean * 0.2, drift * 0.05, -bank * 0.35);
+    function arm(side, sign) {
+      var outward = side === "l" ? -1 : 1;
+      poseSet("clavicle_" + side, 0.04, 0, outward * 0.07);
+      poseSet("scapula_" + side, 0.05, 0, outward * 0.09);
+      poseSet("shoulder_" + side, 0.32 + lean * 0.35 + sign * w * 0.16, 0, outward * (0.46 + sign * w * 0.14));
+      poseSet("elbow_" + side, 0.68 + sign * q * 0.16, 0, 0);
+      poseSet("forearm_" + side, 0, sign * q * 0.12, 0);
+      poseSet("wrist_" + side, 0.06 + sign * w * 0.08, 0, outward * 0.06);
+      curlFingers(side, 0.32, null);
+    }
+    function leg(side, sign) {
+      var outward = side === "l" ? -1 : 1;
+      poseSet("hip_" + side, 0.38 + lean * 0.12, 0, outward * (0.14 + sign * w * 0.1));
+      poseSet("knee_" + side, -(0.62 + sign * q * 0.2), 0, 0);
+      poseSet("ankle_" + side, -0.12 + sign * w * 0.08, 0, 0);
+      poseSet("ball_" + side, 0.08, 0, 0);
+      poseSet("heel_" + side, 0.04, 0, 0);
+      bendToes(side, 0.05, 0);
+    }
+    arm("l", 1);
+    arm("r", -1);
+    leg("l", 1);
+    leg("r", -1);
+    poseRibs(drift * 0.3);
+  }
+
+  function poseStrafe(sign, sprinting, moveAmt) {
+    var amp = sprinting ? 1 : (0.7 + 0.3 * moveAmt);
+    var step = Math.sin(gaitPhase);
+    var leadReach = 0.5 + 0.5 * step;
+    var trailPush = 0.5 - 0.5 * step;
+    var lead = sign > 0 ? "r" : "l";
+    var trail = sign > 0 ? "l" : "r";
+    var reach = (sprinting ? 0.22 : 0.16) * amp;
+    resetRoot();
+    poseSet("hips", 0.025, -sign * step * 0.06, -sign * 0.03);
+    poseSet("hip_l", (lead === "l" ? 0.08 : 0.02) * leadReach, 0, -0.11 + sign * (lead === "l" ? leadReach : trailPush * 0.3) * reach);
+    poseSet("hip_r", (lead === "r" ? 0.08 : 0.02) * leadReach, 0, 0.11 + sign * (lead === "r" ? leadReach : trailPush * 0.3) * reach);
+    function limb(side, push) {
+      poseSet("knee_" + side, -(0.16 + push * (sprinting ? 0.55 : 0.38)), 0, 0);
+      poseSet("ankle_" + side, 0.05 + push * 0.08, 0, 0);
+      poseSet("ball_" + side, (1 - push) * 0.14, 0, 0);
+      poseSet("heel_" + side, push * 0.1, 0, 0);
+      bendToes(side, 0.04 + (1 - push) * 0.1, 1 - push);
+    }
+    limb("l", lead === "l" ? leadReach : trailPush);
+    limb("r", lead === "r" ? leadReach : trailPush);
+    poseArm(trail, 0.32 + step * 0.06, sprinting ? 0.62 : 0.5, 0.4, 0.2, sign * 0.08, 0.06, sign * 0.04, null);
+    poseArm(lead, 0.28 - step * 0.05, sprinting ? 0.58 : 0.48, 0.38, 0.16, -sign * 0.06, 0.05, -sign * 0.03, null);
+    bendSpine(-0.05, -0.03, 0.04, 0, -sign * step * 0.08, -sign * 0.1 * amp);
+    poseSet("head", 0.035, sign * 0.07, sign * 0.035);
+    poseRibs(step * 0.08);
+    settleFeet(0);
+  }
+
+  function snapshotPose() {
+    var n, out = {};
+    for (n in joints) {
+      out[n] = {
+        rx: joints[n].rx,
+        ry: joints[n].ry,
+        rz: joints[n].rz,
+        x: joints[n].x,
+        y: joints[n].y
+      };
+    }
+    return out;
+  }
+
+  function blendFrom(from, k) {
+    var n, j, a, s;
+    s = k * k * (3 - 2 * k);
+    for (n in joints) {
+      j = joints[n];
+      a = from[n];
+      if (!a) continue;
+      j.rx = a.rx + (j.rx - a.rx) * s;
+      j.ry = a.ry + (j.ry - a.ry) * s;
+      j.rz = a.rz + (j.rz - a.rz) * s;
+      j.x = a.x + (j.x - a.x) * s;
+      j.y = a.y + (j.y - a.y) * s;
+    }
+  }
+
+  function followLimbs(dt) {
+    limbLag.fl = damp(limbLag.fl, joints.forearm_l.ry, dt, 14);
+    limbLag.fr = damp(limbLag.fr, joints.forearm_r.ry, dt, 14);
+    limbLag.wl = damp(limbLag.wl, joints.wrist_l.rx, dt, 10);
+    limbLag.wr = damp(limbLag.wr, joints.wrist_r.rx, dt, 10);
+    limbLag.hx = damp(limbLag.hx, joints.head.rx, dt, 8);
+    limbLag.hy = damp(limbLag.hy, joints.head.ry, dt, 8);
+    joints.forearm_l.ry = limbLag.fl;
+    joints.forearm_r.ry = limbLag.fr;
+    joints.wrist_l.rx = limbLag.wl;
+    joints.wrist_r.rx = limbLag.wr;
+    joints.head.rx = limbLag.hx;
+    joints.head.ry = limbLag.hy;
+  }
+
+  var CLIP_JOINTS = ["hips", "l5", "l4", "l3", "l2", "l1", "t12", "t11", "t10", "t9", "t8", "t7", "t6", "t5", "t4", "t3", "t2", "t1", "c7", "c6", "c5", "c4", "c3", "c2", "head", "clavicle_l", "shoulder_l", "elbow_l", "forearm_l", "wrist_l", "scapula_l", "clavicle_r", "shoulder_r", "elbow_r", "forearm_r", "wrist_r", "scapula_r", "hip_l", "knee_l", "ankle_l", "ball_l", "toe_l", "hip_r", "knee_r", "ankle_r", "ball_r", "toe_r"];
+  var CLIPS = {
+    idle: {dur: 2.5, n: 60, b64: "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"},
+    walk: {dur: 1.33333, n: 32, b64: "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"},
+    jog: {dur: 0.91667, n: 22, b64: "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"},
+    sprint: {dur: 0.66667, n: 16, b64: "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"},
+    strafe: {dur: 1.33333, n: 32, b64: "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"},
+    jump: {dur: 1.33333, n: 33, b64: "xv4V/lz/AAD5/wAAAAD5/wAAGwD5/wAATAD5//7/GwD5////AAD8/wAA7P/8/wEAAAD8/wAAxv/7/wMA7P/7/wEAAAD8/wAAAAD8/wAAAAD8/wAAa//7/wsANf4KACcAAAD8/wAAbP8DAAwAAAD8/wAAAAD8/wAAAAD8/wAAAAD8/wAAOgD5//v/4AD2/+n/rwEBAQAAyQMiAxn+qf8C/rf+NQI//wAAAADj/wAABAEAAPj/6v8AAI3/cANz/IwBQQCFA1MB+wIrAQAAAAAtAAAAIgEAAA0AEAAAAHcAoweQ+7wDxfgB/wAAXgA1AFkCIQAAAAAAFwAAAAAApQiQ/AQFxfj/AAAAXgDL/6f9IQAAAAAAFwAAAAAAIv8i/o7/AAD5/wAAAAD5/wAAGwD5/wAATAD5//7/GwD5////AAD8/wAABAD8/wAAAAD8/wAADAD8////BAD8/wAAAAD8/wAAAAD8/wAAAAD8/wAAw//9/wQAUf///wwAAAD8/wAAw//+/wQAAAD8/wAAAAD8/wAAAAD8/wAAAAD8/wAA+f/9/wEA5v/9/wMARAH/AO//tAEhAkAA5P+V/dH9NQI//wAAAADj/wAABAEAAPj/+f8AADz/tQFz/Zb/awDPA7oCPQI6AQAAAAAvAAAAIgEAAA4AGwAAAPQAiQjO9QoK2vst/wAAyv+TAEQC7f8AAAAA8/8AAAAAqwge+NYJ2vvTAAAAyv9t/7z97f8AAAAA8/8AAAAAsf8n/tr/AAD6/wAAAAD6/wAAGwD6/wAATAD6////GwD6////AAD9/wAACwD8////AAD8/wAAIAD8//7/CwD8////AAD8/wAAAAD8/wAAAAD8/wAA+P/9/wEA6P/9/wMAAAD8/wAA+P/9/wEAAAD8/wAAAAD8/wAAAAD8/wAAAAD8/wAA0v/9/wQAT/8DAA8A9gD+AOX/SQAPAioBt/+x/T39RwJZ/wAAAADn/wAAAgEAAPn/7v8AAAj/eQCW/cD+EADWA60D8AHtAAAAAAAkAAAAIgEAAAsABAAAAEkBpgr59CwLUf4P/wAA0/45AVwCl/8AAAAAtf8AAAAAWAqZ9sALUf7xAAAA0/7H/qT9l/8AAAAAtf8AAAAAHgAG/h0AAAD7/wAAAAD7/wAAGwD7/wAATAD7////GwD7////AAD9/wAA///9////AAD9/wAA/f/9//3////9////AAD9/wAAAAD9/wAAAAD9/wAA7P/9/wMAxv/9/woAAAD9/wAA7P/9/wQAAAD9/wAAAAD9/wAAAAD9/wAAAAD9/wAA0v/9/wIATf8AAAkAuQADAfj/RQA0AhIB3/8w/Qz9nAK+/wAAAAD2/wAA/AAAAP3/+P8AAPf+WwB6/eX+YgCMBO4DuAIuAAAAAAAHAAAAJQEAAAIAGAAAAGABPwox9aYKGvzS/gAAXP46AQQCbf8AAAAAl/8AAAAADQry9vwKGvwuAQAAXP7G/vz9bf8AAAAAl/8AAAAAYgDI/VoAAAD8/wAAAAD8/wAAGwD8/wAATAD9////GwD9/wAAAAD+/wAA9P/+//7/AAD+/wAA3v/9//n/9P/+//7/AAD+/wAAAAD+/wAAAAD+/wAA2v/9/wcAkv/9/xUAAAD+/wAA2v/+/wcAAAD+/wAAAAD+/wAAAAD+/wAAAAD+/wAA0f/9/wAATP/8/wAAVAAKARwAdQB1AsYAMgCN/Nr8KQMlAAAAAAAGAAAA8AAAAAEADQAAAOb+VABL/UD//gDlBCQECASG/wAAAADu/wAAKAEAAPr/QAAAAHMB3gmR9dYJ2/kM/gAA0P2xAU4CPP8AAAAAdP8AAAAAqwmB9x4K2/n0AQAA0P1P/rL9PP8AAAAAdP8AAAAAgwCA/Y0AAAD//wAAAAD//wAAGwD//wAATAAAAAAAGwAAAAAAAAAAAAAA6v////z/AAAAAAAAwf/9//X/6v/+//z/AAD//wAAAAD//wAAAAD//wAAw//8/woAUP/8/x8AAAD//wAAw//+/wsAAAD//wAAAAD//wAAAAD//wAAAAD//wAA0//+//3/U//4//X/7f8PAUoAuADFAlAAoQAk/MH8mwNGAAAAAAAKAAAA4AAAAAIAKAAAAN3+WgAa/bb/nQF2BGcEGgUe/wAAAADe/wAALAEAAPb/ZwAAAIsB1wnH9fwILvhf/QAAJf5JAfgBWv8AAAAAif8AAAAAZwkv+H8JLvihAgAAJf63/gj+Wv8AAAAAif8AAAAAkwBC/bQAAAACAAAAAAACAAAAGwACAAAATAADAAAAGwADAAAAAAABAAAA4f8AAPv/AAABAAAAp//9//H/4f////v/AAABAAAAAAABAAAAAAABAAAAq//8/wwABv/7/yYAAAAAAAAAq////w4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA2f/+//v/a//3/+z/q/8NAXMA8gATA8v/DgEI/MH8tAMTAAAAAAADAAAA0AAAAAEARAAAAN3+cQDv/C4A/wGbA8cEWQUB/wAAAADa/wAALwEAAPT/gAAAAKwBEwqq9V0IIvfy/AAA3/6bAE0Bm/8AAAAAuP8AAAAAOgnK+DoJIvcOAwAA3/5l/7P+m/8AAAAAuP8AAAAAngAg/cwAAAADAAAAAAADAAAAGwADAAAATAAEAAEAGwAEAAAAAAACAAAA2P8BAPr/AAACAAAAjv/8/+//2P////r/AAACAAAAAAACAAAAAAACAAAAkv/8/wwAuf78/ygAAAAAAAAAkv8AAA4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA5f////n/mP/6/+b/rv8BAYkAIQFTA0n/YAE4/Mn8jwOq/wAAAADz/wAAwgAAAP3/WAAAAOD+pQDI/JUAGgKvAhkFFAU7/wAAAADi/wAAMAEAAPf/hgAAAMkBZgp69Q4Itvam/AAAWv9NAOMAxv8AAAAA1/8AAAAAGQkB+VQJtvZaAwAAWv+z/x3/xv8AAAAA1/8AAAAAqwAa/dcAAAADAAAAAAADAAAAGwADAAAATAADAAEAGwADAAAAAAACAAAA0P8BAPv/AAACAAAAd//8//H/0P////v/AAABAAAAAAABAAAAAAABAAAAfP/8/wsAcP4AACYAAAAAAAAAfP8BAA0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA9f8AAPr/1f/+/+f/7P/zAI4AUAGAA9j+hgGn/ML8TgMy/wAAAADh/wAAugAAAPr/YQAAAN7+8QCi/OoAEwL9ASIFsAS5/wAAAAD1/wAAMAEAAP3/hQAAAMwBqQp49f4HtPau/AAAjv8vAKYA2P8AAAAA5P8AAAAACwm++KYJtPZSAwAAjv/R/1r/2P8AAAAA5P8AAAAAsgAb/dwAAAACAAAAAAACAAAAGwACAAAATAADAAAAGwACAAAAAAABAAAAy/8AAPv/AAABAAAAaP/8//H/y/////v/AAABAAAAAAABAAAAAAABAAAAbf/8/woAOv4AACMAAAAAAAAAbf8BAAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPv/AQAAAOv/HwDrAJAAfwGXA5P+fQE4/aj8AgPX/gAAAADT/wAAuAAAAPj/XwAAANX+MwGM/CwB/AFKASYFXwRcAAAAAAAOAAAAMAEAAAQAfwAAAM0Bzwp19RUIxvbQ/AAA0P8fAI0A7/8AAAAA9P8AAAAAHQl/+OUJxvYwAwAA0P/h/3P/7/8AAAAA9P8AAAAAtgAf/d4AAAACAAAAAAACAAAAGwACAAAATAACAAAAGwACAAAAAAABAAAAyf8AAPv/AAABAAAAYf/8//H/yf////v/AAABAAAAAAABAAAAAAABAAAAZf/8/wkAH/4AACEAAAAAAAAAZv8BAAsAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABgAAAPv/GAAAAO7/NgDnAJIAnAGgA3T+cwHK/ZL8vgKF/gAAAADH/wAAuAAAAPX/XQAAAM3+VwGB/E4B7QGqADsFNATxAAAAAAAkAAAAMAEAAAsAewAAANUB5Qp09TYI3fb6/AAAEQAUAIIABgAAAAAABAAAAAAAOAlM+BIK3fYGAwAAEQDs/37/BgAAAAAABAAAAAAAuAAm/d0AAAABAAAAAAABAAAAGwABAAAATAACAAAAGwACAAAAAAABAAAAyP8AAPv/AAABAAAAYP/8//H/yP////v/AAABAAAAAAABAAAAAAABAAAAYv/7/wgAEv7//x8AAAAAAAAAYv8BAAoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACQAAAPz/JAAAAPD/QADjAJMAqQGlA2j+cgFR/n78iQIy/gAAAAC7/wAAuAAAAPP/XQAAAMb+aAF8/FwB5wFWAFIFGARAAQAAAAAwAAAAMAEAAA8AegAAAN0B9Ap99VMI+PYi/QAAQAANAHsAFwAAAAAAEAAAAAAATAkZ+DcK+PbeAgAAQADz/4X/FwAAAAAAEAAAAAAAuAAw/doAAAABAAAAAAABAAAAGwABAAAATAACAAAAGwABAAAAAAABAAAAyf8AAPv/AAABAAAAYf/8//H/yf////v/AAABAAAAAAABAAAAAAABAAAAYP/7/wgADP7+/x0AAAAAAAAAYf8AAAoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACwAAAPz/KQABAPH/QwDgAJMArgGnA2b+eAG1/m78ZQLy/QAAAACx/wAAuAAAAPH/XgAAAMD+cQF4/GAB5gFNAGUF9AM6AAAAAAAJAAAAAwEAAAIAeQAAAOMB/QqN9WsIF/dI/QAAWwAJAHUAIAAAAAAAFwAAAAAAWgnl91cKF/e4AgAAWwD3/4v/IAAAAAAAFwAAAAAAsgA9/dMAAAABAAAAAAABAAAAGwABAAAATAABAAAAGwABAAAAAAABAAAAyv8AAPv/AAABAAAAZf/8//D/yv////v/AAAAAAAAAAAAAAAAAAAAAAAAYP/7/wcADP7+/xsAAAAAAAAAYf8AAAkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACwAAAPz/KwABAPL/QADdAJQAsAGoA2j+gQHT/mD8UALf/QAAAACu/wAAuAAAAPH/YAAAALv+dgF3/F8B5QFQAGwFzQPO/gAAAADS/wAA8AAAAPX/eQAAAOYB/gql9X4IOPdo/QAAYQAIAHAAIgAAAAAAGAAAAAAAXgmz93IKOPeYAgAAYQD4/5D/IgAAAAAAGAAAAAAAqwBL/coAAAABAAAAAAABAAAAGwABAAAATAABAAAAGwABAAAAAAAAAAAAzP8AAPr/AAAAAAAAa//8/+//zP/+//r/AAAAAAAAAAAAAAAAAAAAAAAAYf/7/wcAD/79/xkAAAAAAAAAYf8AAAkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACwAAAPz/KgABAPL/OwDaAJMArwGoA27+jAHR/lT8QQLf/QAAAACu/wAAuAAAAPH/YwAAALf+eQF2/FoB5QFVAG8FpwPW/gAAAADT/wAA8AAAAPX/eQAAAOcB+gq/9Y0IW/eE/QAAWAAJAGkAHwAAAAAAFgAAAAAAXAmC94wKW/d8AgAAWAD3/5f/HwAAAAAAFgAAAAAAogBb/cAAAAAAAAAAAAAAAAAAGwAAAAAATAABAAAAGwABAAAAAAAAAAAAzv8AAPr/AAAAAAAAcf/8/+//zv/+//r/AAAAAAAAAAAAAAAAAAAAAAAAY//7/wYAFf78/xcAAAAAAAAAY/8AAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACgAAAP3/JwAAAPP/NADXAJMArAGoA3f+mgHJ/kn8NALf/QAAAACu/wAAuAAAAPH/ZgAAALP+eQF2/FIB5gFeAHEFgAPp/gAAAADW/wAA8QAAAPb/eQAAAOgB9ArZ9ZkIfveb/QAARwAKAGMAGQAAAAAAEgAAAAAAVglQ96YKfvdlAgAARwD2/53/GQAAAAAAEgAAAAAAlwBs/bYAAAAAAAAAAAAAAAAAGwAAAAAATAAAAAAAGwAAAAAAAAAAAAAA0f8AAPr/AAAAAAAAef/8/+7/0f/+//r/AAAAAAAAAAAAAAAAAAAAAAAAZf/7/wUAHP78/xUAAAAAAAAAZf8AAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACQAAAP3/IgAAAPP/KwDUAJIAqAGnA4L+qQG9/j78KALf/QAAAACu/wAAuAAAAPH/agAAAK/+dwF3/EgB5wFrAHIFWgME/wAAAADa/wAA8QAAAPf/egAAAOgB7Qr09aIIoveu/QAAMAALAFsAEQAAAAAADAAAAAAATAke98AKovdSAgAAMAD1/6X/EQAAAAAADAAAAAAAiwB//asAAAAAAAAAAAAAAAAAGwAAAAAATAAAAAAAGwAAAAAAAAAAAAAA1P8AAPn/AAAAAAAAgf/8/+3/1P/+//r/AAAAAAAAAAAAAAAAAAAAAAAAZ//7/wUAJf77/xMAAAAAAAAAZ////wcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABwAAAP3/HQAAAPT/IQDQAJIAowGmA5D+uQGt/jT8HQLh/QAAAACu/wAAuAAAAPH/bgAAAKz+dQF4/DwB6QF9AHMFNQMn/wAAAADg/wAA8gAAAPj/egAAAOgB4woN9qgIxPe9/QAAGwAMAFMACgAAAAAABwAAAAAAPgns9t0KxPdDAgAAGwD0/63/CgAAAAAABwAAAAAAfwCR/aAAAAAAAAAAAAAAAAAAGwAAAAAATAAAAAAAGwAAAAAAAAAAAAAA1/////n/AAAAAAAAiv/9/+z/1//+//n/AAAAAAAAAAAAAAAAAAAAAAAAav/7/wQAL/76/xEAAAAAAAAAav///wYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABgAAAP3/FwAAAPT/FgDMAJEAnAGkA5/+ygGZ/ir8EwLi/QAAAACv/wAAuAAAAPH/cwAAAKj+cQF5/C8B6gGRAHIFEANQ/wAAAADm/wAA8wAAAPn/egAAAOgB2Qol9qsI4vfK/QAACgAMAEoABAAAAAAAAwAAAAAALgm69voK4vc2AgAACgD0/7b/BAAAAAAAAwAAAAAAcQCk/ZYAAAD//wAAAAD//wAAGwD//wAATAD//wAAGwD//wAAAAAAAAAA2v////n/AAAAAAAAk//9/+v/2v/+//n/AAAAAAAAAAAAAAAAAAAAAAAAbf/7/wQAOv76/w4AAAAAAAAAbf///wYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAP3/EAAAAPT/CwDIAJAAlQGiA67+3AGD/iH8CwLl/QAAAACv/wAAuAAAAPH/dwAAAKX+bQF6/CEB6wGpAHAF7AJ9/wAAAADs/wAA9QAAAPv/ewAAAOcBzgo89q4I/vfV/QAA/v8LAD8A//8AAAAA//8AAAAAHgmI9hkL/vcrAgAA/v/1/8H///8AAAAA//8AAAAAYwC3/YsAAAD//wAAAAD//wAAGwD//wAATAD//wAAGwD//wAAAAAAAAAA3f////j/AAAAAAAAnP/9/+r/3f/+//n/AAAAAAAAAAAAAAAAAAAAAAAAcP/8/wMARf75/wwAAAAAAAAAcP///wUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAP3/CQAAAPX/AADFAI4AjgGgA7/+7QFr/hf8AwLn/QAAAACw/wAAuAAAAPH/ewAAAKL+aQF8/BIB7AHEAG4FygKr/wAAAADz/wAA+AAAAP3/ewAAAOYBwgpR9q8IF/jf/QAA9f8JADQA/P8AAAAA/f8AAAAADAlW9jkLF/ghAgAA9f/3/8z//P8AAAAA/f8AAAAAVQDK/YIAAAD//wAAAAD//wAAGwD//wAATAD//wAAGwD//wAAAAD//wAA4f////j/AAD//wAApv/9/+n/4f/+//j/AAD//wAAAAD//wAAAAD//wAAc//8/wIAUP75/woAAAAAAAAAc////wQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP3/AQAAAPX/9P/BAI0AhwGeA8/+/QFQ/g78/QHr/QAAAACw/wAAuAAAAPH/fwAAAJ/+ZQF9/AQB6wHhAGoFqQLb/wAAAAD6/wAA/AAAAP//ewAAAOUBtgpm9q4ILPjp/QAA8P8HACgA+/8AAAAA/P8AAAAA+ggk9lkLLPgXAgAA8P/5/9j/+/8AAAAA/P8AAAAARwDc/XkAAAD//wAAAAD//wAAGwD//wAATAD+/wAAGwD//wAAAAD//wAA5P////j/AAD//wAAr//9/+j/5P/+//j/AAD//wAAAAD//wAAAAD//wAAdv/8/wIAXP74/wgAAAAAAAAAdv/+/wQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/v8AAP3/+v8AAPb/6f+9AIwAfwGcA+D+DgI1/gb8+AHu/QAAAACw/wAAuAAAAPH/gwAAAJz+YAF//PUA6wEAAWYFigIJAAAAAAABAAAAAQEAAAAAewAAAOQBqQp69qwIPvjx/QAA7/8FABsA+v8AAAAA/P8AAAAA6Qjz9XkLPvgPAgAA7//7/+X/+v8AAAAA/P8AAAAAOQDt/XAAAAD//wAAAAD//wAAGwD//wAATAD+/wAAGwD+/wAAAAD//wAA5/////f/AAD//wAAuP/9/+f/5//+//f/AAD//wAAAAD//wAAAAD//wAAev/8/wEAZ/74/wYAAAAAAAAAev/+/wMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/P8AAP3/8v8AAPb/3f+5AIsAeAGZA/H+HQIa/v378wHx/QAAAACx/wAAuAAAAPH/hwAAAJn+WwGA/OcA6gEhAWEFbgI1AAAAAAAIAAAABgEAAAIAegAAAOIBnQqN9qkITvj5/QAA8P8DAA8A+v8AAAAA/P8AAAAA1wjC9ZoLTvgHAgAA8P/9//H/+v8AAAAA/P8AAAAAKwD+/WkAAAD//wAAAAD//wAAGwD+/wAATAD+/wAAGwD+/wAAAAD//wAA6v////f/AAD//wAAwf/+/+b/6v/+//f/AAD//wAAAAD//wAAAAD//wAAff/8/wEAcv73/wQAAAAAAAAAff/+/wIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA+v8AAP3/6v8AAPb/0v+1AIkAcAGXAwD/KwL+/fX77wH1/QAAAACy/wAAuAAAAPH/iwAAAJb+VwGB/NoA6AFDAVsFUwJdAAAAAAAOAAAADAEAAAQAegAAAOABkAqf9qUIW/gA/gAA8v8AAAMA+/8AAAAA/f8AAAAAxwiS9boLW/gAAgAA8v8AAP3/+/8AAAAA/f8AAAAAHgAN/mIAAAD+/wAAAAD+/wAAGwD+/wAATAD+/wAAGwD+/wAAAAD//wAA7f////f/AAD//wAAyf/+/+X/7f/+//f/AAD//wAAAAD//wAAAAD//wAAgP/8/wAAff73/wIAAAAAAAAAgP/+/wIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA+f8AAP7/4/////f/yP+yAIgAaQGVAxD/OALk/e777QH5/QAAAACy/wAAuAAAAPH/jgAAAJP+UgGC/M0A5gFmAVQFOwKBAAAAAAATAAAAEgEAAAUAeQAAAN0BhAqv9qEIZvgG/gAA9//+//f//f8AAAAA/v8AAAAAuAhl9dkLZvj6AQAA9/8CAAkA/f8AAAAA/v8AAAAAEgAb/lwAAAD+/wAAAAD+/wAAGwD+/wAATAD+/wAAGwD+/wAAAAD//wAA8P////b/AAD//wAA0f/+/+X/8P/+//b/AAD//wAAAAD//wAAAAD//wAAg//8/wAAh/73/wAAAAAAAAAAg//+/wEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA9/8AAP7/3P////f/vv+vAIcAYwGTAx7/RALL/ef76wH8/QAAAACz/wAAuAAAAPL/kQAAAJH+TgGD/MEA4wGJAUsFJQKgAAAAAAAYAAAAGQEAAAcAeQAAANoBeQq/9pwIbvgL/gAA/P/8/+z///8AAAAA//8AAAAAqgg69fYLbvj1AQAA/P8EABQA//8AAAAA//8AAAAABwAo/lgAAAD+/wAAAAD+/wAAGwD+/wAATAD9/wAAGwD+/wAAAAD//wAA8v////b/AAD//wAA2P/+/+T/8v/+//b/AAD//wAAAAD//wAAAAD//wAAhv/8////kP73////AAAAAAAAhv/+/wEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA9f8AAP7/1v////f/tv+sAIYAXQGRAyr/TgKz/eH76QH//QAAAACz/wAAuAAAAPL/lAAAAI/+SgGE/LYA4AGsAUIFEgK6AAAAAAAcAAAAHwEAAAgAeAAAANcBbwrN9pcIdfgQ/gAAAgD7/+H/AQAAAAAAAQAAAAAAnQgT9RIMdfjwAQAAAgAFAB8AAQAAAAAAAQAAAAAA/f8z/lMAAAD+/wAAAAD+/wAAGwD+/wAATAD9/wAAGwD+/wAAAAD//wAA9P////b/AAD//wAA3v/+/+P/9P/+//b/AAD//wAAAAD//wAAAAD//wAAiP/8////mf73//7/AAAAAAAAiP/9/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA9P8AAP7/0P////f/rv+qAIUAVwGPAzb/VwKf/dv76AEC/gAAAAC0/wAAuAAAAPL/lgAAAI3+RgGF/KwA3QHNATgFAwLPAAAAAAAfAAAAJAEAAAkAdwAAANQBZgrZ9pIIevgT/gAACQD6/9j/AwAAAAAAAgAAAAAAkgjw9CoMevjtAQAACQAGACgAAwAAAAAAAgAAAAAA9f87/lAAAAD+/wAAAAD+/wAAGwD+/wAATAD9/wAAGwD+/wAAAAD//wAA9v////b/AAD//wAA4//+/+P/9v////b/AAD//wAAAAD//wAAAAD//wAAiv/8//7/oP72//3/AAAAAAAAiv/9/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8v8AAP7/y/////f/p/+oAIQAUwGNAz//XgKO/df76AEE/gAAAAC0/wAAuAAAAPL/mAAAAIv+QwGG/KQA2gHrAS4F9gHgAAAAAAAiAAAAKQEAAAoAdgAAANABXgrj9o4IffgW/gAADgD5/9H/BQAAAAAABAAAAAAAiQjU9D4MffjqAQAADgAHAC8ABQAAAAAABAAAAAAA7/9C/k4AAAD+/wAAAAD+/wAAGwD+/wAATAD9/wAAGwD9/wAAAAD//wAA9/////b/AAD//wAA5//+/+L/9/////b/AAD//wAAAAD//wAAAAD//wAAjP/8//7/pf72//z/AAAAAAAAjP/9/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8f8AAP7/x/////f/ov+mAIMATwGMA0b/YwKB/dP75wEG/gAAAAC0/wAAuAAAAPL/mQAAAIr+QAGG/J4A1wEFAiMF7QHrAAAAAAAjAAAALQEAAAsAdgAAAMwBWQrq9ooIgPgY/gAAEwD4/8v/BwAAAAAABQAAAAAAgwi+9E4MgPjoAQAAEwAIADUABwAAAAAABQAAAAAA6/9G/kwAAAD+/wAAAAD+/wAAGwD+/wAATAD9/wAAGwD9/wAAAAD//wAA+P////X/AAD//wAA6f/+/+L/+P////b/AAD//wAAAAD//wAAAAD//wAAjf/8//7/qf72//v/AAAAAAAAjf/9/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8f8AAP7/xP////f/nv+mAIMATQGLA0v/ZwJ5/dH75wEH/gAAAAC0/wAAuAAAAPL/mgAAAIn+PgGH/JoA1QEZAhkF5wHzAAAAAAAkAAAALwEAAAsAdQAAAMkBVQrv9ogIgfgZ/gAAFgD4/8j/CAAAAAAABQAAAAAAfgiw9FgMgfjnAQAAFgAIADgACAAAAAAABQAAAAAA6f9H/kwAAAD+/wAAAAD+/wAAGwD+/wAATAD9/wAAGwD9/wAAAAD//wAA+P////X/AAD//wAA6v/+/+L/+P////X/AAD//wAAAAD//wAAAAD//wAAjv/8//7/qv72//v/AAAAAAAAjf/9/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8P8AAP7/w/////f/nf+lAIMATAGLA03/aAJ2/dD75wEI/gAAAAC0/wAAuAAAAPL/mgAAAIn+PQGH/JkA1AEiAhQF5QH1AAAAAAAlAAAAMAEAAAwAdQAAAMcBUwrx9ocIgfga/gAAFwD3/8b/CAAAAAAABgAAAAAAfQir9FwMgfjmAQAAFwAJADoACAAAAAAABgAAAAAA"},
+    land: {dur: 1.25, n: 31, b64: "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"},
+  };
+
+  // Clips are Quaternius Universal Animation Library, CC0, retargeted onto this skeleton.
+  function clipBytes(c) {
+    var bin, n, a, i, v;
+    if (c.raw) return c.raw;
+    bin = atob(c.b64);
+    n = bin.length >> 1;
+    a = new Int16Array(n);
+    for (i = 0; i < n; i++) {
+      v = bin.charCodeAt(i * 2) | (bin.charCodeAt(i * 2 + 1) << 8);
+      if (v & 32768) v -= 65536;
+      a[i] = v;
+    }
+    c.raw = a;
+    c.stride = CLIP_JOINTS.length * 3;
+    return a;
+  }
+
+  function angLerp(a, b, k) {
+    var d = b - a;
+    if (d > Math.PI) d -= Math.PI * 2;
+    if (d < -Math.PI) d += Math.PI * 2;
+    return a + d * k;
+  }
+
+  function applyClip(name, time, loop) {
+    var c, raw, n, stride, f, i0, i1, k, j, o0, o1, e, jn;
+    c = CLIPS[name];
+    raw = clipBytes(c);
+    n = c.n;
+    stride = c.stride;
+    f = (time / c.dur) * n;
+    if (loop) {
+      f = f % n;
+      if (f < 0) f += n;
+    } else if (f < 0) f = 0;
+    else if (f > n - 1.0001) f = n - 1.0001;
+    i0 = Math.floor(f);
+    if (i0 >= n) i0 = 0;
+    i1 = loop ? (i0 + 1) % n : Math.min(n - 1, i0 + 1);
+    k = f - Math.floor(f);
+    o0 = i0 * stride;
+    o1 = i1 * stride;
+    for (j = 0; j < CLIP_JOINTS.length; j++) {
+      jn = joints[CLIP_JOINTS[j]];
+      if (!jn) continue;
+      e = j * 3;
+      jn.rx = angLerp(raw[o0 + e] / 1000, raw[o1 + e] / 1000, k);
+      jn.ry = angLerp(raw[o0 + e + 1] / 1000, raw[o1 + e + 1] / 1000, k);
+      jn.rz = angLerp(raw[o0 + e + 2] / 1000, raw[o1 + e + 2] / 1000, k);
+    }
+  }
+
+  function mirrorBody() {
+    var pairs, i, a, b, tx, ty, tz, mid;
+    pairs = [
+      ["clavicle_l", "clavicle_r"], ["shoulder_l", "shoulder_r"], ["elbow_l", "elbow_r"],
+      ["forearm_l", "forearm_r"], ["wrist_l", "wrist_r"], ["scapula_l", "scapula_r"],
+      ["hip_l", "hip_r"], ["knee_l", "knee_r"], ["ankle_l", "ankle_r"],
+      ["ball_l", "ball_r"], ["toe_l", "toe_r"]
+    ];
+    for (i = 0; i < pairs.length; i++) {
+      a = joints[pairs[i][0]];
+      b = joints[pairs[i][1]];
+      tx = a.rx; a.rx = b.rx; b.rx = tx;
+      ty = a.ry; a.ry = -b.ry; b.ry = -ty;
+      tz = a.rz; a.rz = -b.rz; b.rz = -tz;
+    }
+    mid = ["hips", "head"];
+    for (i = 0; i < spineNames.length; i++) mid.push(spineNames[i]);
+    for (i = 0; i < mid.length; i++) {
+      a = joints[mid[i]];
+      a.ry = -a.ry;
+      a.rz = -a.rz;
+    }
+  }
+
+  function addSpine(rx, rz) {
+    var i, n;
+    n = 0;
+    for (i = 8; i < spineNames.length; i++) n++;
+    for (i = 8; i < spineNames.length; i++) {
+      joints[spineNames[i]].rx += rx / n;
+      joints[spineNames[i]].rz += rz / n;
+    }
+  }
+
+  // The free idle is a held stagger. On a line body that reads as a broken
+  // lunge, so the legs and pelvis ease back toward the standing rest.
+  function softenStance() {
+    var names = ["hips", "hip_l", "knee_l", "ankle_l", "ball_l", "toe_l", "hip_r", "knee_r", "ankle_r", "ball_r", "toe_r"];
+    var i, j;
+    for (i = 0; i < names.length; i++) {
+      j = joints[names[i]];
+      if (!j) continue;
+      j.rx *= 0.2;
+      j.ry *= 0.2;
+      j.rz *= 0.2;
+    }
+  }
+
+  var cycle = 0;
+  var stepHz = 1.6;
+
+  function poseSkeleton(dt, inp, sprinting) {
+    var dist, grounded, moveAmt, moving, mode, tempo, clipName, tuck, lt, p, span, curl, travel, lean, bank;
+    if (location.hash === "#selftest") return;
+    animT += dt;
+    dist = Math.hypot(px, py, pz);
+    grounded = dist <= R + EYE + 0.08 && vr <= 0.05;
+    moveAmt = Math.min(1, Math.hypot(inp.f, inp.s));
+    moving = moveAmt > 0.04;
+    // God mode used to hold the idle in the air. That clip barely moves, so
+    // flying looked frozen. Flight plays the same steps as the ground.
+    if (!god && !grounded) mode = "air";
+    else if (moving && Math.abs(inp.s) > Math.abs(inp.f) + 0.15 && Math.abs(inp.f) < 0.35) mode = inp.s < 0 ? "strafeL" : "strafeR";
+    else if (moving && sprinting) mode = "sprint";
+    else if (moving && moveAmt > 0.72) mode = "jog";
+    else if (moving) mode = "walk";
+    else mode = god ? "hover" : "idle";
+    if (mode !== poseMode) {
+      modeFrom = snapshotPose();
+      modeMix = 0;
+      blendWindow = (mode === "air" || poseMode === "air") ? 0.12 : 0.18;
+      poseMode = mode;
+    }
+    if (mode === "air") airTime += dt;
+    else airTime = 0;
+    if (god || grounded) {
+      if (wasAir && grounded && !god) landHold = 0.62;
+      wasAir = false;
+    } else {
+      wasAir = true;
+      landHold = 0;
+    }
+    if (landHold > 0) landHold = Math.max(0, landHold - dt);
+    poseZero();
+    resetRoot();
+    clipName = "";
+    tempo = 1;
+    if (mode === "hover" || mode === "walk" || mode === "jog" || mode === "sprint" || mode === "strafeL" || mode === "strafeR") {
+      clipName = (mode === "strafeL" || mode === "strafeR") ? "strafe" : (mode === "hover" ? "walk" : mode);
+      tempo = mode === "hover" ? 0.5 : mode === "sprint" ? 1.08 : mode === "jog" ? 1 : (0.82 + 0.18 * moveAmt);
+      cycle += dt * tempo / CLIPS[clipName].dur;
+      applyClip(clipName, (cycle % 1) * CLIPS[clipName].dur, true);
+      if (mode === "strafeL") mirrorBody();
+      stepHz = god ? 0 : 2 * tempo / CLIPS[clipName].dur;
+    } else if (mode === "air") {
+      tuck = 0.42;
+      if (airTime <= tuck) lt = airTime;
+      else {
+        span = tuck * 2;
+        p = (airTime - tuck) % span;
+        lt = p <= tuck ? tuck - p : p - tuck;
+      }
+      applyClip("jump", lt, false);
+      stepHz = 0;
+    } else if (mode === "idle" && landHold > 0) {
+      applyClip("land", Math.min(CLIPS.land.dur - 0.04, 0.62 - landHold), false);
+      stepHz = 0;
+    } else {
+      applyClip("idle", animT % CLIPS.idle.dur, true);
+      softenStance();
+      stepHz = 0;
+    }
+    if (god) {
+      travel = Math.hypot(inp.f, inp.s, inp.u);
+      lean = 0;
+      bank = 0;
+      if (travel > 0.04) {
+        lean = -inp.f * 0.14;
+        bank = -inp.s * 0.1;
+      }
+      addSpine(lean, bank);
+      joints.head.rx -= lean * 0.35;
+      joints.hips.y = hipsRestY + 0.34 + Math.sin(animT * 1.55) * 0.045;
+    }
+    curl = mode === "sprint" ? 0.55 : mode === "jog" ? 0.46 : mode === "air" ? 0.28 : 0.34;
+    curlFingers("l", curl, null);
+    curlFingers("r", curl, null);
+    if (mode !== "air") poseRibs(Math.sin(animT * 1.45) * (mode === "sprint" ? 0.2 : 0.32));
+    if (modeFrom && modeMix < 1) {
+      modeMix = Math.min(1, modeMix + dt / blendWindow);
+      blendFrom(modeFrom, modeMix);
+      if (modeMix >= 1) modeFrom = null;
+    }
+    if (!god && grounded) settleFeet(0);
+    if (sound) sound.stepHz = stepHz;
+  }
+
+
+  var whereEl = document.getElementById("where");
+  var compassEl = document.getElementById("compass");
+  var noteEl = document.getElementById("note");
+  var noteLeft = 0;
+  var whereText = whereEl ? whereEl.textContent : "";
+  var compassDeg = 0;
+  function say(text) {
+    if (!noteEl) return;
+    noteEl.textContent = text;
+    noteEl.classList.add("show");
+    noteLeft = 1.5;
+  }
+  function paintReadout(inp, dt) {
+    if (noteLeft > 0) {
+      noteLeft -= dt;
+      if (noteLeft <= 0) noteEl.classList.remove("show");
+    }
+    var hx, hz, b;
+    if (god) {
+      b = basis(yaw);
+      hx = b.fx;
+      hz = b.fz;
+    } else {
+      hx = fx;
+      hz = fz;
+    }
+    var deg = Math.atan2(hx, -hz) * 180 / Math.PI;
+    if (deg < 0) deg += 360;
+    var names = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+    var name = names[Math.round(deg / 45) % 8];
+    var dist = Math.hypot(px, py, pz);
+    var grounded = dist <= R + EYE + 0.08 && vr <= 0.05;
+    var mode = "Standing";
+    if (god) mode = "Flying";
+    else if (!grounded) mode = vr > 0.05 ? "Jumping" : "Falling";
+    else if (inp && Math.hypot(inp.f, inp.s) > 0.04) mode = "Walking";
+    var line = name + " · " + mode;
+    if (whereEl && line !== whereText) {
+      whereText = line;
+      whereEl.textContent = line;
+    }
+    var shown = Math.round(deg);
+    if (compassEl && shown !== compassDeg) {
+      compassDeg = shown;
+      compassEl.style.transform = "rotate(" + shown + "deg)";
+    }
+  }
+
+  var last = performance.now();
+  var jumpPrev = false;
+  function frame(now) {
+    requestAnimationFrame(frame);
+    if (glLost || gl.isContextLost()) return;
+    if (!fit()) return;
+    var dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    var inp = keyboardMove(dt);
+    var jumpNow = !!(keys.Space || holdUp);
+    var jumpEdge = jumpNow && !jumpPrev;
+    jumpPrev = jumpNow;
+    var sprint = !!(keys.ShiftLeft || keys.ShiftRight);
+    if (god) {
+      if (inp.f || inp.s || inp.u) step(inp, dt, sprint);
+    } else {
+      walkMove({ f: inp.f, s: inp.s, u: 0 }, dt, sprint, jumpEdge);
+    }
+    mixMotion(inp, dt, sprint);
+    poseSkeleton(dt, inp, sprint);
+    paintReadout(inp, dt);
+    cameraView();
+    multiply(proj, view, mvp);
+    gl.useProgram(program);
+    gl.enableVertexAttribArray(locPos);
+    gl.enable(gl.DEPTH_TEST);
+    gl.uniformMatrix4fv(locMVP, false, mvp);
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.vertexAttribPointer(locPos, 3, gl.FLOAT, false, 0, 0);
+    gl.uniform3f(locColor, 0.55, 0.56, 0.64);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.uniform1f(locFogK, 1 / 58);
+    gl.drawArrays(gl.LINES, 0, starStart);
+    gl.uniform1f(locFogK, 0);
+    gl.uniform3f(locColor, 0.62, 0.63, 0.72);
+    gl.drawArrays(gl.LINES, starStart, verts.length / 3 - starStart);
+    gl.uniform1f(locFogK, 1 / 58);
+    var posed = bodyFrame();
+    var skel = [];
+    for (var si = 0; si < boneNames.length; si++) {
+      var child = jointLocal(boneNames[si]);
+      var parent = jointLocal(joints[boneNames[si]].parent);
+      skel.push(parent[0], parent[1], parent[2], child[0], child[1], child[2]);
+    }
+    var bodyWorld = new Float32Array(skel.length);
+    for (var bi = 0; bi < skel.length; bi += 3) {
+      var lx = skel[bi], ly = skel[bi + 1], lz = skel[bi + 2];
+      bodyWorld[bi] = px - posed.ux * EYE + posed.rx * lx + posed.ux * ly - posed.fx * lz;
+      bodyWorld[bi + 1] = py - posed.uy * EYE + posed.ry * lx + posed.uy * ly - posed.fy * lz;
+      bodyWorld[bi + 2] = pz - posed.uz * EYE + posed.rz * lx + posed.uz * ly - posed.fz * lz;
+    }
+    if (tprog) {
+      var segs = bodyWorld.length / 6;
+      var quads = new Float32Array(segs * 48);
+      var qi = 0, gi;
+      for (gi = 0; gi < segs; gi++) {
+        var ax = bodyWorld[gi * 6], ay = bodyWorld[gi * 6 + 1], az = bodyWorld[gi * 6 + 2];
+        var bx = bodyWorld[gi * 6 + 3], by = bodyWorld[gi * 6 + 4], bz = bodyWorld[gi * 6 + 5];
+        var push = function(side, end) {
+          quads[qi++] = ax; quads[qi++] = ay; quads[qi++] = az;
+          quads[qi++] = bx; quads[qi++] = by; quads[qi++] = bz;
+          quads[qi++] = side; quads[qi++] = end;
+        };
+        push(1, 0); push(1, 1); push(-1, 0);
+        push(1, 1); push(-1, 1); push(-1, 0);
+      }
+      gl.useProgram(tprog);
+      gl.bindBuffer(gl.ARRAY_BUFFER, tbuf);
+      gl.bufferData(gl.ARRAY_BUFFER, quads, gl.DYNAMIC_DRAW);
+      gl.enableVertexAttribArray(tLocA);
+      gl.enableVertexAttribArray(tLocB);
+      gl.enableVertexAttribArray(tLocSide);
+      gl.vertexAttribPointer(tLocA, 3, gl.FLOAT, false, 32, 0);
+      gl.vertexAttribPointer(tLocB, 3, gl.FLOAT, false, 32, 12);
+      gl.vertexAttribPointer(tLocSide, 2, gl.FLOAT, false, 32, 24);
+      gl.uniformMatrix4fv(tLocMVP, false, mvp);
+      gl.uniform2f(tLocRes, canvas.width, canvas.height);
+      gl.uniform1f(tLocWidth, Math.max(2, canvas.width / 480));
+      gl.uniform3f(tLocColor, 0.93, 0.94, 0.97);
+      gl.drawArrays(gl.TRIANGLES, 0, quads.length / 8);
+      gl.disableVertexAttribArray(tLocA);
+      gl.disableVertexAttribArray(tLocB);
+      gl.disableVertexAttribArray(tLocSide);
+    } else {
+      gl.bindBuffer(gl.ARRAY_BUFFER, bodyBuf);
+      gl.bufferData(gl.ARRAY_BUFFER, bodyWorld, gl.DYNAMIC_DRAW);
+      gl.vertexAttribPointer(locPos, 3, gl.FLOAT, false, 0, 0);
+      gl.uniform3f(locColor, 0.93, 0.94, 0.97);
+      gl.drawArrays(gl.LINES, 0, bodyWorld.length / 3);
+    }
+  }
+  requestAnimationFrame(frame);
+  }
+})();
+</script>
+</body>
+</html>
