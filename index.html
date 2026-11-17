@@ -128,9 +128,60 @@
     transition: opacity 0.4s ease;
   }
   #hint.gone { opacity: 0; }
+  #readout {
+    position: fixed;
+    z-index: 3;
+    top: calc(max(var(--edge), env(safe-area-inset-top)) + 56px);
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    max-width: calc(100% - max(var(--edge), env(safe-area-inset-left)) - max(var(--edge), env(safe-area-inset-right)) - 24px);
+    pointer-events: none;
+  }
+  #nav {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 0;
+    padding: 6px 12px;
+    background: var(--chip);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+    font: 13px/1.2 ui-sans-serif, system-ui, sans-serif;
+    white-space: nowrap;
+  }
+  #compass {
+    width: 14px;
+    height: 14px;
+    border: 1.5px solid var(--line);
+    border-radius: 50%;
+    position: relative;
+    flex: 0 0 auto;
+  }
+  #compass::before {
+    content: "";
+    position: absolute;
+    left: 6px;
+    top: 1px;
+    width: 2px;
+    height: 6px;
+    border-radius: 1px;
+    background: var(--ink);
+  }
+  @media (max-width: 520px) {
+    #readout { top: calc(max(var(--edge), env(safe-area-inset-top)) + 108px); }
+  }
   @media (max-width: 720px), (max-height: 720px) {
     #hint { font-size: 12px; line-height: 1.3; padding: 6px 10px; }
     #god, #mute, #full { padding: 0 12px; font-size: 13px; }
+    #nav { padding: 6px 12px; font-size: 13px; }
   }
   #dot {
     position: fixed;
@@ -245,6 +296,12 @@
 <div id="lift">
   <button type="button" id="up" aria-label="Up" tabindex="-1" draggable="false"></button>
   <button type="button" id="down" aria-label="Down" tabindex="-1" draggable="false"></button>
+</div>
+<div id="readout">
+  <div id="nav">
+    <span id="compass" aria-hidden="true"></span>
+    <span id="where">N · Flying</span>
+  </div>
 </div>
 <div id="hint">Drag the right mouse button to look, WASD moves, Space up, C down, Shift faster, Q strafes left, E strafes right, neither key turns the body, and holding the left and right mouse buttons together moves forward while the right button still looks and the left button still yaws only.</div>
 <div id="result"></div>
@@ -2194,6 +2251,42 @@
     if (!god && grounded && landHold > 0) poseLand(landHold / 0.22);
   }
 
+  var whereEl = document.getElementById("where");
+  var compassEl = document.getElementById("compass");
+  var whereText = whereEl ? whereEl.textContent : "";
+  var compassDeg = 0;
+  function paintReadout(inp, dt) {
+    var hx, hz, b;
+    if (god) {
+      b = basis(yaw);
+      hx = b.fx;
+      hz = b.fz;
+    } else {
+      hx = fx;
+      hz = fz;
+    }
+    var deg = Math.atan2(hx, -hz) * 180 / Math.PI;
+    if (deg < 0) deg += 360;
+    var names = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+    var name = names[Math.round(deg / 45) % 8];
+    var dist = Math.hypot(px, py, pz);
+    var grounded = dist <= R + EYE + 0.08 && vr <= 0.05;
+    var mode = "Standing";
+    if (god) mode = "Flying";
+    else if (!grounded) mode = vr > 0.05 ? "Jumping" : "Falling";
+    else if (inp && Math.hypot(inp.f, inp.s) > 0.04) mode = "Walking";
+    var line = name + " · " + mode;
+    if (whereEl && line !== whereText) {
+      whereText = line;
+      whereEl.textContent = line;
+    }
+    var shown = Math.round(deg);
+    if (compassEl && shown !== compassDeg) {
+      compassDeg = shown;
+      compassEl.style.transform = "rotate(" + shown + "deg)";
+    }
+  }
+
   function drawLines(src, nFloats, startFloat) {
     if (!startFloat) startFloat = 0;
     var segs = (nFloats / 6) | 0;
@@ -2248,6 +2341,7 @@
     }
     mixMotion(inp, dt, sprint);
     poseSkeleton(dt, inp, sprint);
+    paintReadout(inp, dt);
     cameraView();
     multiply(proj, view, mvp);
     gl.useProgram(program);
