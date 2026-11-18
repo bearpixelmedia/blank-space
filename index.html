@@ -1970,20 +1970,20 @@
   }
 
   function poseIdle(rate, armOut, soft) {
-    var b = Math.sin(animT * rate);
-    var w = Math.sin(animT * rate * 0.5);
-    var sway = Math.sin(animT * rate * 0.85);
-    var liftL = Math.max(0, sway);
-    var liftR = Math.max(0, -sway);
-    bendSpine(b * 0.06, b * 0.08, -b * 0.12, w * 0.05, -w * 0.04, sway * 0.16);
-    poseSet("head", 0.08 - b * 0.2, w * 0.1, sway * 0.16);
-    poseArm("l", 0.12 + b * 0.55, 0.25 + soft + 1.05 * liftR, 0.32, armOut + 0.28 + 0.45 * liftL, 0.55 * sway, 0.12 + b * 0.6, -0.35 * sway, animT * rate);
-    poseArm("r", 0.12 - b * 0.55, 0.25 + soft + 1.05 * liftL, 0.32, armOut + 0.28 + 0.45 * liftR, -0.55 * sway, 0.12 - b * 0.6, 0.35 * sway, animT * rate + 1.1);
-    poseLeg("l", 0.06 + b * 0.1, -(0.16 + liftL * 1.05), 0.22 + liftL * 0.3, 0.12, 0.08 + liftL * 0.4, 0.12);
-    poseLeg("r", 0.06 - b * 0.1, -(0.16 + liftR * 1.05), 0.22 + liftR * 0.3, 0.12, 0.08 + liftR * 0.4, 0.12);
-    poseSet("hip_l", 0.06 + b * 0.1, 0, -0.1 - liftL * 0.4);
-    poseSet("hip_r", 0.06 - b * 0.1, 0, 0.1 + liftR * 0.4);
-    poseRibs(b);
+    // Rest. The caller still passes 1.5; the breath runs slower than that.
+    var pace = rate * 0.4;
+    var b = Math.sin(animT * pace);
+    var sway = Math.sin(animT * pace * 0.42);
+    var hang = 0.06 + armOut * 0.22;
+    bendSpine(b * 0.02, b * 0.015, -b * 0.008, sway * 0.01, -sway * 0.006, sway * 0.028);
+    poseSet("head", 0.02 + b * 0.035, sway * 0.018, sway * 0.016);
+    poseArm("l", 0.05 + b * 0.018, 0.15 + soft + b * 0.01, 0.16, hang, sway * 0.012, 0.02, -0.012, null);
+    poseArm("r", 0.05 - b * 0.018, 0.15 + soft - b * 0.01, 0.16, hang, -sway * 0.012, 0.02, 0.012, null);
+    poseLeg("l", 0.018 + b * 0.006, -0.045, 0.022, 0.01, 0.012, 0.016);
+    poseLeg("r", 0.018 - b * 0.006, -0.045, 0.022, 0.01, 0.012, 0.016);
+    poseSet("hip_l", 0.018 + b * 0.006, 0, -0.012);
+    poseSet("hip_r", 0.018 - b * 0.006, 0, 0.012);
+    poseRibs(0.2 + 0.36 * b);
   }
 
   // Quaternius CC0 walk and jog, sampled onto this stick. One cycle is WALK_DUR or JOG_DUR.
@@ -2141,49 +2141,99 @@
   }
 
   function poseHover(inp) {
-    // Follow camera is behind the eye. Picture plane is x and y.
-    // A z bend sinks into depth, so the stroke is rz, hip height, and a rock.
-    // Left and right trade. Wrists and ankles lead by a quarter turn.
-    var s = Math.sin(animT * 7.2);
-    var q = Math.cos(animT * 7.2);
-    var b = Math.sin(animT * 1.7);
-    var d = Math.sin(animT * 0.55);
+    // Still: upright Superman hover. Moving: chest leads, one arm reaches, bank stays capped.
     var travel = Math.hypot(inp.f, inp.s, inp.u);
-    var lean = 0;
-    var bank = 0;
-    if (travel > 0.04) {
-      lean = -inp.f * 0.22;
-      bank = -inp.s * 0.3;
+    var breath = Math.sin(animT * 0.62);
+    var HOVER_PITCH = 0.18;
+    var BANK_CAP = 0.36;
+    function bendTotal(totalRx, totalRy, totalRz) {
+      var n = spineNames.length;
+      var i, t, w, sum, weights;
+      sum = 0;
+      weights = [];
+      for (i = 0; i < n; i++) {
+        t = i / (n - 1);
+        w = 0.35 + 0.65 * t;
+        weights.push(w);
+        sum += w;
+      }
+      for (i = 0; i < n; i++) {
+        poseSet(spineNames[i], totalRx * weights[i] / sum, totalRy * weights[i] / sum, totalRz * weights[i] / sum);
+      }
     }
-    joints.hips.y = hipsRestY + 0.07 * q + 0.015 * b;
-    bendSpine(lean * 0.35 + b * 0.05, lean * 0.12, -b * 0.04, d * 0.05, 0, bank + s * 0.22);
-    poseSet("head", 0.08 - lean * 0.45 + b * 0.1, d * 0.14, -bank * 0.55 - s * 0.28);
-    function arm(side, sign) {
-      var outward = side === "l" ? -1 : 1;
-      var open = Math.max(0, sign * s);
-      poseSet("clavicle_" + side, b * 0.06, 0, outward * (0.2 + b * 0.04));
-      poseSet("scapula_" + side, b * 0.05, 0, outward * 0.16);
-      poseSet("shoulder_" + side, 0.35 + lean * 0.25, 0, outward * (0.95 + b * 0.08));
-      poseSet("elbow_" + side, 0.55, 0, outward * 0.15 + sign * s * 0.95);
-      poseSet("forearm_" + side, 0, sign * q * 0.4, 0);
-      poseSet("wrist_" + side, sign * q * 0.75, 0, sign * s * 0.55);
-      curlFingers(side, 0.55 - 0.4 * open, animT * 7.2);
+    function aim(dx, dy, dz) {
+      var len = Math.hypot(dx, dy, dz);
+      var side;
+      if (len < 1e-5) {
+        dx = 0;
+        dy = -1;
+        dz = 0;
+        len = 1;
+      }
+      dx /= len;
+      dy /= len;
+      dz /= len;
+      side = Math.hypot(dx, dy);
+      if (side < 1e-4) return { rx: dz < 0 ? Math.PI / 2 : -Math.PI / 2, rz: 0 };
+      return { rx: Math.atan2(-dz, side), rz: Math.atan2(dx, -dy) };
     }
-    function leg(side, sign) {
-      var outward = side === "l" ? -1 : 1;
-      var rise = Math.max(0, sign * q);
-      poseSet("hip_" + side, -0.55, 0, outward * 0.22 + sign * s * 0.28);
-      poseSet("knee_" + side, -0.85, 0, sign * s * 0.55);
-      poseSet("ankle_" + side, 0.35 + sign * q * 0.5, 0, sign * s * 0.2);
-      poseSet("ball_" + side, 0.12, 0, 0);
-      poseSet("heel_" + side, 0.1, 0, 0);
-      bendToes(side, 0.1 + rise * 0.28, rise);
+    if (travel <= 0.04) {
+      var arm = breath * 0.04;
+      joints.hips.y = hipsRestY + breath * 0.012;
+      bendTotal(HOVER_PITCH + breath * 0.03, breath * 0.012, breath * 0.015);
+      poseSet("head", 0.28 + breath * 0.03, breath * 0.015, breath * 0.01);
+      poseArm("l", 0.48 + arm, 0.5, 0.55, 1.0, 0.04, 0.04, -0.04, null);
+      poseArm("r", 0.48 + arm, 0.5, 0.55, 1.0, -0.04, 0.04, 0.04, null);
+      poseLeg("l", 0.03, -0.06, 0.03, 0.02, 0.015, 0.02);
+      poseLeg("r", 0.03, -0.06, 0.03, 0.02, 0.015, 0.02);
+      poseSet("hip_l", 0.03, 0, -0.04);
+      poseSet("hip_r", 0.03, 0, 0.04);
+      poseRibs(0.35 + 0.3 * breath);
+      return;
     }
-    arm("l", 1);
-    arm("r", -1);
-    leg("l", -1);
-    leg("r", 1);
-    poseRibs(0.3 + 0.75 * b);
+    var pulse = Math.sin(animT * 0.86);
+    var lean = -inp.f * 0.5 + inp.u * 0.08 + pulse * 0.015;
+    var bank = -inp.s * BANK_CAP;
+    if (bank > BANK_CAP) bank = BANK_CAP;
+    if (bank < -BANK_CAP) bank = -BANK_CAP;
+    var flightX = inp.s;
+    var flightY = inp.u;
+    var flightZ = -inp.f;
+    var leadSide = (inp.s < -0.08 && -inp.s > Math.abs(inp.f) * 0.65) ? "l" : "r";
+    function outwardOf(side) { return side === "l" ? -1 : 1; }
+    function flightArm(side) {
+      var outward = outwardOf(side);
+      var lead = side === leadSide;
+      var a = lead
+        ? aim(flightX + outward * 0.32, flightY + 0.2, flightZ)
+        : aim(-flightX + outward * 0.42, -flightY - 0.12, -flightZ);
+      var elbow = lead ? 0.12 + pulse * 0.03 : 0.26;
+      poseSet("clavicle_" + side, 0.06, 0, outward * 0.14);
+      poseSet("scapula_" + side, 0.08, 0, outward * 0.2);
+      poseSet("shoulder_" + side, a.rx, 0, a.rz);
+      poseSet("elbow_" + side, elbow, 0, 0);
+      poseSet("forearm_" + side, 0, elbow * 0.08, 0);
+      poseSet("wrist_" + side, 0.04, 0, outward * 0.02);
+      curlFingers(side, lead ? 0.72 : 0.58, null);
+    }
+    function flightLeg(side, kick) {
+      var outward = outwardOf(side);
+      var a = aim(-flightX + outward * 0.16, -flightY - 0.38, -flightZ);
+      poseSet("hip_" + side, a.rx, 0, a.rz);
+      poseSet("knee_" + side, -0.12 + kick, 0, 0);
+      poseSet("ankle_" + side, -0.16, 0, 0);
+      poseSet("ball_" + side, -0.05, 0, 0);
+      poseSet("heel_" + side, 0.04, 0, 0);
+      bendToes(side, -0.03, 0);
+    }
+    joints.hips.y = hipsRestY + pulse * 0.008;
+    bendTotal(lean, -inp.s * 0.1, bank);
+    poseSet("head", 0.06 + inp.u * 0.35 + pulse * 0.02, -inp.s * 0.42, bank * 0.12);
+    flightArm("l");
+    flightArm("r");
+    flightLeg("l", pulse * 0.08);
+    flightLeg("r", -pulse * 0.06);
+    poseRibs(0.26 + 0.16 * pulse);
   }
 
   function poseSidestep(sign, sprinting) {
