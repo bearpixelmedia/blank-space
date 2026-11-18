@@ -2196,17 +2196,16 @@
     var bank = -inp.s * BANK_CAP;
     if (bank > BANK_CAP) bank = BANK_CAP;
     if (bank < -BANK_CAP) bank = -BANK_CAP;
-    var flightX = inp.s;
-    var flightY = inp.u;
-    var flightZ = -inp.f;
+    // Facing is -z. Strafe only leans the reach. Limbs do not aim out to the side.
+    var strafeLean = inp.s * 0.2;
     var leadSide = (inp.s < -0.08 && -inp.s > Math.abs(inp.f) * 0.65) ? "l" : "r";
     function outwardOf(side) { return side === "l" ? -1 : 1; }
     function flightArm(side) {
       var outward = outwardOf(side);
       var lead = side === leadSide;
       var a = lead
-        ? aim(flightX + outward * 0.32, flightY + 0.2, flightZ)
-        : aim(-flightX + outward * 0.42, -flightY - 0.12, -flightZ);
+        ? aim(strafeLean + outward * 0.16, 0.16 + inp.u * 0.85, -(0.9 + Math.max(inp.f, 0) * 0.35))
+        : aim(outward * 0.2 - strafeLean * 0.2, -0.1 - inp.u * 0.12, 1);
       var elbow = lead ? 0.12 + pulse * 0.03 : 0.26;
       poseSet("clavicle_" + side, 0.06, 0, outward * 0.14);
       poseSet("scapula_" + side, 0.08, 0, outward * 0.2);
@@ -2218,7 +2217,7 @@
     }
     function flightLeg(side, kick) {
       var outward = outwardOf(side);
-      var a = aim(-flightX + outward * 0.16, -flightY - 0.38, -flightZ);
+      var a = aim(outward * 0.12 + inp.s * 0.05, -0.34 - inp.u * 0.12, 1);
       poseSet("hip_" + side, a.rx, 0, a.rz);
       poseSet("knee_" + side, -0.12 + kick, 0, 0);
       poseSet("ankle_" + side, -0.16, 0, 0);
@@ -2228,7 +2227,7 @@
     }
     joints.hips.y = hipsRestY + pulse * 0.008;
     bendTotal(lean, -inp.s * 0.1, bank);
-    poseSet("head", 0.06 + inp.u * 0.35 + pulse * 0.02, -inp.s * 0.42, bank * 0.12);
+    poseSet("head", 0.06 + inp.u * 0.35 + pulse * 0.02, -inp.s * 0.18, bank * 0.12);
     flightArm("l");
     flightArm("r");
     flightLeg("l", pulse * 0.08);
